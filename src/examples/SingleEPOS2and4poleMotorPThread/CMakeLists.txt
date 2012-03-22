@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 2.6)
 
 include_directories(.
 	${PROJECT_SOURCE_DIR}/include
-	${PROJECT_SOURCE_DIR}/src/libCAN/SL
-	${PROJECT_SOURCE_DIR}/src/libCAN/CANSharedMemory
-	${PROJECT_SOURCE_DIR}/src/libCAN/CANMessage
-	${PROJECT_SOURCE_DIR}/src/libCAN/Bus
-	${PROJECT_SOURCE_DIR}/src/libCAN/Device
-	${PROJECT_SOURCE_DIR}/src/libCAN/Device/EPOS2Motor
+	${PROJECT_SOURCE_DIR}/src/libcanplusplus/SL
+	${PROJECT_SOURCE_DIR}/src/libcanplusplus/CANSharedMemory
+	${PROJECT_SOURCE_DIR}/src/libcanplusplus/CANMessage
+	${PROJECT_SOURCE_DIR}/src/libcanplusplus/bus
+	${PROJECT_SOURCE_DIR}/src/libcanplusplus/devices
+	${PROJECT_SOURCE_DIR}/src/libcanplusplus/devices/EPOS2Motor
 )
 link_directories(${LIBRARY_OUTPUT_PATH})
 
