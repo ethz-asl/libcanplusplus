@@ -1,0 +1,3 @@
+#cmakedefine USE_SL_FUNCTIONS
+#cmakedefine COMPILE_XENOMAI
+
