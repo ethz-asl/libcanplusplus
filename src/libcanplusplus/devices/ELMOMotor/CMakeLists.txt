@@ -1,12 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
 
-####################
-## SUBDIRECTORIES ##
-####################
-add_subdirectory(EPOS2Motor)
-add_subdirectory(ELMOMotor)
-
-
 ################
 ### INCLUDES ###
 ################
@@ -19,8 +12,7 @@ PARENT_SCOPE)
 ### SOURCES ###
 ###############
 set(libCAN_SRCS ${libCAN_SRCS} 
-	${CMAKE_CURRENT_SOURCE_DIR}/Device.cpp 
-	${CMAKE_CURRENT_SOURCE_DIR}/DeviceManager.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/DeviceELMOMotor.cpp
 PARENT_SCOPE)
 
 #################
