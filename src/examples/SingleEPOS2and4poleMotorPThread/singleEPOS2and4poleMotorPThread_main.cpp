@@ -87,8 +87,6 @@ enum CANNODEID {
 //! number of buses
 const int nBuses = 1;
 
-//! number of messages per bus
-const int nMessages = 3;
 
 //! cycle rate of loop in millisec
 const double time_step_ms = 2.5;

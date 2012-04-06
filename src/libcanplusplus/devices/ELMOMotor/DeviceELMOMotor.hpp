@@ -64,6 +64,11 @@ public:
 	 */
 	virtual void configTxPDOPositionVelocity();
 
+	/*! Configures the PDO to measure the analog signal and the current
+	* Is invoked by configTxPDOs()
+	*/
+	virtual void configTxPDOAnalogCurrent();
+
 	/*! Configures the PDO to send the profile velocity
 	 * Is invoked by configRxPDOs()
 	 */
@@ -119,8 +124,15 @@ public:
 
 	void setPosition(double jointPosition_rad);
 
-	void executeCommandBegin();
-	void executeCommandStop();
+	/*! Gets the current
+	 * @return current [mA]
+	 */
+	double getCurrent();
+
+	/*! Gets the analog signal
+	 * @return
+	 */
+	double getAnalog();
 
 	/*! Sets the position limits of the joint
 	 * Converts the limits to motor position limits
@@ -134,7 +146,7 @@ public:
 	//! Disable the EPOS
 	void setDisableMotor();
 
-	void sendControlWord();
+
 
 	//bool getPoti(double &value);
 
@@ -148,8 +160,8 @@ protected:
 	//! PDO message to send motor position command
 	RxPDOPosition* rxPDOPosition_;
 
-	//! PDO message to send the execute command
-	RxPDOExCmd* rxPDOExCmd_;
+	//! PDO message to measure analog signal and current
+	TxPDOAnalogCurrent* txPDOAnalogCurrent_;
 
 	//! device parameters
 	DeviceELMOMotorParameters* deviceParams_;

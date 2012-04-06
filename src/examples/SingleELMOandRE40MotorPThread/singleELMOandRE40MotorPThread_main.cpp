@@ -65,16 +65,16 @@ enum TxPDOs {
 
 //! shared memory ID of sent messages
 enum DESSMID {
-	DESSMID_RxPDO_SYNC = 2,
-	DESSMID_RxPDO_MOTOR_EXCMD = 0,
-	DESSMID_RxPDO_MOTOR = 1,
-	DESSMID_SDO = 3,
+	DESSMID_RxPDO_SYNC = 1,
+	DESSMID_RxPDO_MOTOR = 0,
+	DESSMID_SDO = 2,
 };
 
 //! shared memory ID of received messages
 enum MEASSMID {
 	MEASSMID_TxPDO_MOTOR = 0,
 	MEASSMID_SDO_MOTOR = 1,
+	MEASSMID_TxPDO_ANALOG_CURRENT = 2
 };
 
 //! CAN Node ID given by the DIP switches
@@ -88,8 +88,6 @@ enum CANNODEID {
 //! number of buses
 const int nBuses = 1;
 
-//! number of messages per bus
-const int nMessages = 4;
 
 //! cycle rate of loop in millisec
 const double time_step_ms = 33;//2.5;
@@ -185,7 +183,7 @@ int main(int argc, char** args)
 
 	/* initialize the initial arguments of the bus routines */
 	for (int i=0; i<nBuses; i++) {
-		busRoutineArgs[i].iBus = 0;
+		busRoutineArgs[i].iBus = 5;
 		busRoutineArgs[i].time_step_ms = time_step_ms;
 	}
 
@@ -193,7 +191,7 @@ int main(int argc, char** args)
 	for (int iBus=0; iBus<nBuses; iBus++) {
 		busManager.addBus(new Bus(iBus));
 		busManager.getBus(iBus)->getRxPDOManager()->addPDO(new RxPDOSync(DESSMID_RxPDO_SYNC));
-		busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOMotor(NODEID_MOTOR, new Maxon_REmax24_Enc500(DESSMID_RxPDO_MOTOR, DESSMID_RxPDO_MOTOR_EXCMD, MEASSMID_TxPDO_MOTOR, MEASSMID_SDO_MOTOR, DESSMID_SDO)));
+		busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOMotor(NODEID_MOTOR, new Maxon_REmax24_Enc500(DESSMID_RxPDO_MOTOR, MEASSMID_TxPDO_MOTOR, MEASSMID_TxPDO_ANALOG_CURRENT, MEASSMID_SDO_MOTOR, DESSMID_SDO)));
 	}
 
 	/* initialize desired CAN commands to zero */
@@ -286,28 +284,29 @@ void *main_routine(void *arg)
 		switch (stateSM) {
 		case SM_INIT_MOTOR:
 			if (counter*time_step_ms/1000.0 > 2.0) {
+				printf("initializing motor\n");
 				for (int iBus=0; iBus<nBuses; iBus++) {
 					DeviceELMOMotor* motor = (DeviceELMOMotor*) busManager.getBus(iBus)->getDeviceManager()->getDevice(0);
 					motor->initDevice();
 				}
-				printf("initializing motor\n");
+
 				stateSM = SM_INITIALIZING_MOTOR;
 			}
 			break;
 		case SM_INITIALIZING_MOTOR:
 
-			if (counter*time_step_ms/1000.0 > 5.0) {
+			if (counter*time_step_ms/1000.0 > 10.0) {
 				for (int iBus=0; iBus<nBuses; iBus++) {
 					busManager.getBus(iBus)->getRxPDOManager()->setSending(true);
 //					DeviceELMOMotor* motor = (DeviceELMOMotor*) busManager.getBus(iBus)->getDeviceManager()->getDevice(0);
 //					motor->executeCommandBegin();
 				}
 				printf("run motor\n");
-				stateSM = SM_RUN;
+				stateSM = SM_RUN_PROFILE_POSITION;
 			}
 			break;
 		case SM_RUN:
-			setMotorVelocity(-0.1);
+			setMotorVelocity(0.1);
 			printPositionVelocity();
 			if (counter*time_step_ms/1000.0 > 20.0) {
 				printf("emergency stop\n");
@@ -318,7 +317,7 @@ void *main_routine(void *arg)
 
 			setMotorPosition(0.3);
 			printPositionVelocity();
-			if (counter*time_step_ms/1000.0 > 10.0) {
+			if (counter*time_step_ms/1000.0 > 20.0) {
 				printf("part 2\n");
 				stateSM = SM_RUN_PROFILE_POSITION_PART2;
 				DeviceELMOMotor* motor = (DeviceELMOMotor*) busManager.getBus(0)->getDeviceManager()->getDevice(0);
@@ -331,7 +330,7 @@ void *main_routine(void *arg)
 			printf("desired position=%lf\n", pos);
 			setMotorPosition(pos);
 			printPositionVelocity();
-			if (counter*time_step_ms/1000.0 > 50.0) {
+			if (counter*time_step_ms/1000.0 > 60.0) {
 				printf("emergency stop\n");
 				stateSM = SM_EMERGENCY_STOP;
 			}
@@ -670,8 +669,9 @@ int getMsgIdxFromCOBId(int iBus, int COBId)
 	case TxPDO1Id+NODEID_MOTOR:
 	case TxPDO2Id+NODEID_MOTOR:
 	case TxPDO3Id+NODEID_MOTOR:
-	case TxPDO4Id+NODEID_MOTOR:
 		return MEASSMID_TxPDO_MOTOR;
+	case TxPDO4Id+NODEID_MOTOR:
+		return MEASSMID_TxPDO_ANALOG_CURRENT;
 	// Motor  SDO
 	case SDOId+NODEID_MOTOR:
 	case NMTEnteredPreOperational+NODEID_MOTOR:
@@ -835,10 +835,14 @@ void setMotorPosition(double position)
 void printPositionVelocity(void)
 {
 	double position, velocity;
+	double analog, current;
 	for (int iBus=0; iBus<nBuses; iBus++) {
 		DeviceELMOMotor* motor = (DeviceELMOMotor*) busManager.getBus(iBus)->getDeviceManager()->getDevice(0);
 		position = motor->getPosition();
 		velocity = motor->getVelocity();
 		printf("Bus%d: position=%f [rad]\tvelocity=%f [rad/s]\n", iBus, position, velocity);
+		analog = motor->getAnalog();
+		current = motor->getCurrent();
+		printf("Bus%d: analog=%lf \tcurrent=%lf\n", iBus, analog,current);
 	}
 }

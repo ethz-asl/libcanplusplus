@@ -19,8 +19,8 @@
 
 
 struct Maxon_RE40_Enc500 : DeviceELMOMotorParameters {
-	Maxon_RE40_Enc500(int rxPDOSMId, int rxExCmdPDOSMId, int txPDOSMId, int inSDOSMId, int outSDOSMId):
-		DeviceELMOMotorParameters(rxPDOSMId, rxExCmdPDOSMId, txPDOSMId, inSDOSMId, outSDOSMId){
+	Maxon_RE40_Enc500(int rxPDOSMId, int txPDOSMId, int txPDO2SMId, int inSDOSMId, int outSDOSMId):
+		DeviceELMOMotorParameters(rxPDOSMId, txPDOSMId, txPDO2SMId, inSDOSMId, outSDOSMId){
 		gearratio_motor = 101.0;		// ok
 		encoder_pulse_number = 500;		// ok
 		encoder_qc_number =		4.0*encoder_pulse_number; // ok
@@ -48,8 +48,8 @@ struct Maxon_RE40_Enc500 : DeviceELMOMotorParameters {
 		 current_P_Gain  = 688;
 		 current_I_Gain  = 123;
 
-			positionLimits[0] = -2*M_PI;
-			positionLimits[1] = 2*M_PI;
+		positionLimits[0] = 0;
+		positionLimits[1] = M_PI;
 
 		continuous_current_limit = 4.7;	//[A]
 		output_current_limit	  = 9.4;//[A]
@@ -69,8 +69,8 @@ struct Maxon_RE40_Enc500 : DeviceELMOMotorParameters {
 };
 
 struct Maxon_REmax24_Enc500 : DeviceELMOMotorParameters {
-	Maxon_REmax24_Enc500(int rxPDOSMId, int rxExCmdPDOSMId, int txPDOSMId, int inSDOSMId, int outSDOSMId):
-		DeviceELMOMotorParameters(rxPDOSMId, rxExCmdPDOSMId, txPDOSMId, inSDOSMId, outSDOSMId){
+	Maxon_REmax24_Enc500(int rxPDOSMId, int txPDOSMId, int txPDO2SMId, int inSDOSMId, int outSDOSMId):
+		DeviceELMOMotorParameters(rxPDOSMId, txPDOSMId, txPDO2SMId, inSDOSMId, outSDOSMId){
 		gearratio_motor = 2772.0;		// ok
 		encoder_pulse_number = 512;		// ok
 		encoder_qc_number =	4.0*encoder_pulse_number; // ok
@@ -98,8 +98,8 @@ struct Maxon_REmax24_Enc500 : DeviceELMOMotorParameters {
 		 current_P_Gain  = 688;
 		 current_I_Gain  = 123;
 
-		positionLimits[0] = -2*M_PI;
-		positionLimits[1] = 2*M_PI;
+		positionLimits[0] = -M_PI/2;
+		positionLimits[1] = M_PI/2;
 
 		continuous_current_limit = 0.5;	//[A]
 		output_current_limit	  = 1.1;//[A]

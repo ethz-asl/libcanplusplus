@@ -158,4 +158,39 @@ private:
 
 };
 
+//////////////////////////////////////////////////////////////////////////////
+class TxPDOAnalogCurrent: public CANOpenMsg {
+public:
+	TxPDOAnalogCurrent(int nodeId, int SMId):CANOpenMsg(0x180+nodeId, SMId)
+	{
+
+	};
+
+	virtual ~TxPDOAnalogCurrent() {};
+
+	virtual void processMsg()
+	{
+		analog_ = (value_[0] + (value_[1]<<8));
+		current_ = (value_[2] + (value_[3]<<8));
+	};
+
+	int getAnalog()
+	{
+		return analog_;
+	};
+
+
+	int getCurrent()
+	{
+		return current_;
+	};
+
+
+private:
+	int analog_;
+	int current_;
+
+};
+
+
 #endif /* CANPDOS_HPP_ */
