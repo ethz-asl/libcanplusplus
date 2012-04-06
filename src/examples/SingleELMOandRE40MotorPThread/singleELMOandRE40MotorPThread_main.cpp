@@ -303,11 +303,11 @@ void *main_routine(void *arg)
 //					motor->executeCommandBegin();
 				}
 				printf("run motor\n");
-				stateSM = SM_RUN_PROFILE_POSITION;
+				stateSM = SM_RUN;
 			}
 			break;
 		case SM_RUN:
-			setMotorVelocity(0.1);
+			setMotorVelocity(-0.1);
 			printPositionVelocity();
 			if (counter*time_step_ms/1000.0 > 20.0) {
 				printf("emergency stop\n");

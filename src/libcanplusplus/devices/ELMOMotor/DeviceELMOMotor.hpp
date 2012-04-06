@@ -136,7 +136,7 @@ public:
 
 	void sendControlWord();
 
-	bool getPoti(double &value);
+	//bool getPoti(double &value);
 
 protected:
 	//! PDO message to measure position and velocity of the motor
@@ -161,7 +161,7 @@ protected:
 	SDOReadStatusWord::SDOReadStatusWordPtr sdoStatusWordDisabled_;
 
 	//! SDO to read if the EPOS is disabled
-	sdoPoti_;
+	//sdoPoti_;
 };
 
 #endif /* DEVICEEPOS2MOTOR_HPP_ */

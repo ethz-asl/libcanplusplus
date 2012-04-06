@@ -38,11 +38,11 @@ void DeviceELMOMotor::addRxPDOs()
 {
 	/* add Velocity RxPDO */
 	rxPDOVelocity_ = new RxPDOVelocity(nodeId_, deviceParams_->rxPDOSMId_);
-	//bus_->getRxPDOManager()->addPDO(rxPDOVelocity_);
+	bus_->getRxPDOManager()->addPDO(rxPDOVelocity_);
 
 	/* add Position RxPDO */
 	rxPDOPosition_ = new RxPDOPosition(nodeId_, deviceParams_->rxPDOSMId_);
-	bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
+	//bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
 
 /*	 add execute command RxPDO
 	rxPDOExCmd_ = new RxPDOExCmd(nodeId_, deviceParams_->rxExCmdPDOSMId_);
@@ -231,8 +231,8 @@ void DeviceELMOMotor::configRxPDOs()
 	SDOManager->addSDO(new SDORxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 
 
-	//configRxPDOProfileVelocity();
-	configRxPDOPosition();
+	configRxPDOProfileVelocity();
+	//configRxPDOPosition();
 }
 
 void DeviceELMOMotor::configTxPDOPositionVelocity()
@@ -243,9 +243,10 @@ void DeviceELMOMotor::configTxPDOPositionVelocity()
 	///< configure COB-ID Transmit PDO 3
 	SDOManager->addSDO(new SDOTxPDO3ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	///< Set Transmission Type: SYNC 0x01
+
 	SDOManager->addSDO(new SDOTxPDO3SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
 	///< Number of Mapped Application Objects
-	SDOManager->addSDO(new SDOTxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+//	SDOManager->addSDO(new SDOTxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	///< Mapping "Position actual value"
 	SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60640020));
 	///< Mapping "demand Velocity actual value"
@@ -255,23 +256,9 @@ void DeviceELMOMotor::configTxPDOPositionVelocity()
 	///< Number of Mapped Application Objects
 	SDOManager->addSDO(new SDOTxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
 
-	/* working with ELMO :*/
-/*
-	// Transmit PDO 3 Parameter
-	///< configure COB-ID Transmit PDO 3
-	SDOManager->addSDO(new SDOTxPDO3ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
-	///< Set Transmission Type: SYNC 0x01
-	SDOManager->addSDO(new SDOTxPDO3SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
-	///< Number of Mapped Application Objects
-	SDOManager->addSDO(new SDOTxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
-	///< Mapping "Position actual value"
-	SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60640020));
-	///< Mapping "Velocity actual value"
-	SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60690020));
-	///< Number of Mapped Application Objects
-	SDOManager->addSDO(new SDOTxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
-*/
-	/* end working */
+
+
+
 }
 
 void DeviceELMOMotor::configRxPDOProfileVelocity()
@@ -308,7 +295,7 @@ void DeviceELMOMotor::configRxPDOPosition()
 	///< Step 2: Set Transmission Type: SYNC 0x01
 	SDOManager->addSDO(new SDORxPDO3SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00)); // SYNC
 	///< Step 3: Number of Mapped Application Objects
-	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+	//SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	///< Step 4: Mapping Objects
 
 
@@ -418,7 +405,7 @@ void DeviceELMOMotor::sendControlWord()
 }
 
 
-bool DeviceELMOMotor::getPoti(double &value)
+/*bool DeviceELMOMotor::getPoti(double &value)
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
 
@@ -439,4 +426,4 @@ bool DeviceELMOMotor::getPoti(double &value)
 	}
 
 	return false;
-}
+}*/
