@@ -1,0 +1,15 @@
+<package>
+  <description brief="hdpc_com">
+
+     hdpc_com
+
+  </description>
+  <author>Christian Gehring</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hdpc_com</url>
+  <depend package="roscpp"/>
+
+</package>
+
+
