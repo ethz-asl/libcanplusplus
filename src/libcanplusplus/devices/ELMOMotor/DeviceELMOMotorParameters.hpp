@@ -119,17 +119,22 @@ public:
 	int operationMode;
 
 	//! identifier of shared memory of RxPDO
-	int rxPDOSMId_;
+	int rxPDO1SMId_;
 
+	//! identifier of shared memory of the second RxPDO
+	int rxPDO2SMId_;
 
-
-	//! identifier of shared memory of RxPDO
-	int rxExCmdPDOSMId_;
 	//! identifier of shared memory of TxPDO
-	int txPDOSMId_;
+	int txPDO1SMId_;
 
 	//! identifier of shared memory of second TxPDO
 	int txPDO2SMId_;
+
+	//! identifier of shared memory of third TxPDO
+	int txPDO3SMId_;
+
+	//! identifier of shared memory of fourth TxPDO
+	int txPDO4SMId_;
 
 	//! identifier of shared memory of received SDO
 	int inSDOSMId_;
@@ -143,10 +148,20 @@ public:
 	 * @param inSDOSMId		identifier of shared memory of received SDO
 	 * @param outSDOSMId	identifier of shared memory of sent SDO
 	 */
-	DeviceELMOMotorParameters(int rxPDOSMId, int txPDOSMId, int txPDO2SMId, int inSDOSMId, int outSDOSMId)
-	:rxPDOSMId_(rxPDOSMId),
-	 txPDOSMId_(txPDOSMId),
+	DeviceELMOMotorParameters(int rxPDO1SMId,
+							  int rxPDO2SMId,
+							  int txPDO1SMId,
+							  int txPDO2SMId,
+							  int txPDO3SMId,
+							  int txPDO4SMId,
+							  int inSDOSMId,
+							  int outSDOSMId)
+	:rxPDO1SMId_(rxPDO1SMId),
+	 rxPDO2SMId_(rxPDO2SMId),
+	 txPDO1SMId_(txPDO1SMId),
 	 txPDO2SMId_(txPDO2SMId),
+	 txPDO3SMId_(txPDO3SMId),
+	 txPDO4SMId_(txPDO4SMId),
 	 inSDOSMId_(inSDOSMId),
 	 outSDOSMId_(outSDOSMId)
 	{

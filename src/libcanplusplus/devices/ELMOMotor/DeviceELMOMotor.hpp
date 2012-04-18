@@ -88,7 +88,7 @@ public:
 	/* get information */
 
 	/*! Gets the joint position [rad]
-	 * @return	joint position [rad/s]
+	 * @return	joint position [rad]
 	 */
 	double getPosition();
 
@@ -118,14 +118,14 @@ public:
 
 	/*! Sets the desired joint velocity [rad/s]
 	 * Converts the velocity to the desired motor velocity [rpm]
-	 * @param velocity 		motor velocity [rad/s]
+	 * @param velocity 		joint velocity [rad/s]
 	 */
 	void setVelocity(double velocity);
 
 	void setPosition(double jointPosition_rad);
 
 	/*! Gets the current
-	 * @return current [mA]
+	 * @return current [A]
 	 */
 	double getCurrent();
 
@@ -133,6 +133,8 @@ public:
 	 * @return
 	 */
 	double getAnalog();
+
+	bool getAnalogInputOne(double& value);
 
 	/*! Sets the position limits of the joint
 	 * Converts the limits to motor position limits
@@ -160,6 +162,8 @@ protected:
 	//! PDO message to send motor position command
 	RxPDOPosition* rxPDOPosition_;
 
+	RxPDOELMOBinaryInterpreterCmd* rxPDOELMOBinaryInterpreterCmd_;
+
 	//! PDO message to measure analog signal and current
 	TxPDOAnalogCurrent* txPDOAnalogCurrent_;
 
@@ -172,8 +176,8 @@ protected:
 	//! SDO to read if the EPOS is disabled
 	SDOReadStatusWord::SDOReadStatusWordPtr sdoStatusWordDisabled_;
 
-	//! SDO to read if the EPOS is disabled
-	//sdoPoti_;
+	//! SDO to read analog input
+	SDOGetAnalogInputOne::SDOGetAnalogInputOnePtr sdoAnalogInputOne_;
 };
 
 #endif /* DEVICEEPOS2MOTOR_HPP_ */

@@ -18,6 +18,7 @@ DeviceELMOMotor::DeviceELMOMotor(int nodeId, DeviceELMOMotorParameters* devicePa
 {
 	sdoStatusWord_ =  SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	sdoStatusWordDisabled_ = SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	sdoAnalogInputOne_ = SDOGetAnalogInputOne::SDOGetAnalogInputOnePtr(new SDOGetAnalogInputOne(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 }
 
 DeviceELMOMotor::~DeviceELMOMotor()
@@ -37,22 +38,24 @@ DeviceELMOMotorParameters* DeviceELMOMotor::getDeviceParams()
 void DeviceELMOMotor::addRxPDOs()
 {
 	/* add Velocity RxPDO */
-	rxPDOVelocity_ = new RxPDOVelocity(nodeId_, deviceParams_->rxPDOSMId_);
-	//bus_->getRxPDOManager()->addPDO(rxPDOVelocity_);
+	rxPDOVelocity_ = new RxPDOVelocity(nodeId_, deviceParams_->rxPDO1SMId_);
+	bus_->getRxPDOManager()->addPDO(rxPDOVelocity_);
 
 	/* add Position RxPDO */
-	rxPDOPosition_ = new RxPDOPosition(nodeId_, deviceParams_->rxPDOSMId_);
-	bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
+	rxPDOPosition_ = new RxPDOPosition(nodeId_, deviceParams_->rxPDO1SMId_);
+	//bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
 
+	rxPDOELMOBinaryInterpreterCmd_ = new RxPDOELMOBinaryInterpreterCmd(nodeId_, "an", 1, deviceParams_->rxPDO2SMId_);
+	//bus_->getRxPDOManager()->addPDO(rxPDOELMOBinaryInterpreterCmd_);
 }
 
 void DeviceELMOMotor::addTxPDOs()
 {
 	/* add PositionVelocity TxPDO */
-	txPDOPositionVelocity_ = new TxPDOPositionVelocity(nodeId_, deviceParams_->txPDOSMId_);
+	txPDOPositionVelocity_ = new TxPDOPositionVelocity(nodeId_, deviceParams_->txPDO3SMId_);
 	bus_->getTxPDOManager()->addPDO(txPDOPositionVelocity_);
 
-	txPDOAnalogCurrent_ = new TxPDOAnalogCurrent(nodeId_, deviceParams_->txPDO2SMId_);
+	txPDOAnalogCurrent_ = new TxPDOAnalogCurrent(nodeId_, deviceParams_->txPDO4SMId_);
 	bus_->getTxPDOManager()->addPDO(txPDOAnalogCurrent_);
 }
 
@@ -90,13 +93,13 @@ double DeviceELMOMotor::getVelocity()
 
 double DeviceELMOMotor::getCurrent()
 {
-	return ((double) txPDOAnalogCurrent_->getCurrent());
+	return ((double) txPDOAnalogCurrent_->getCurrent()) * deviceParams_->continuous_current_limit / 1000.0;
 }
 
 
 double DeviceELMOMotor::getAnalog()
 {
-	return ((double) txPDOAnalogCurrent_->getAnalog());
+	return ((double) txPDOAnalogCurrent_->getAnalog())*0.00067139;
 }
 
 
@@ -242,8 +245,8 @@ void DeviceELMOMotor::configRxPDOs()
 	SDOManager->addSDO(new SDORxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 
 
-	//configRxPDOProfileVelocity();
-	configRxPDOPosition();
+	configRxPDOProfileVelocity();
+	//configRxPDOPosition();
 }
 
 void DeviceELMOMotor::configTxPDOPositionVelocity()
@@ -262,7 +265,9 @@ void DeviceELMOMotor::configTxPDOPositionVelocity()
 	///< Mapping "demand Velocity actual value"
 	// velocity demand value 0x606B0020
 	// velocity target value 0x60FF0020
-	SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x606B0020));
+	// working:
+	//SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x606B0020));
+	SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60690020));
 	///< Number of Mapped Application Objects
 	SDOManager->addSDO(new SDOTxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
 
@@ -270,23 +275,45 @@ void DeviceELMOMotor::configTxPDOPositionVelocity()
 
 void DeviceELMOMotor::configTxPDOAnalogCurrent()
 {
+//	SDOManager* SDOManager = bus_->getSDOManager();
+//
+//	// Transmit PDO 4 Parameter
+//	///< configure COB-ID Transmit PDO 4
+//	SDOManager->addSDO(new SDOTxPDO1ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+//	///< Set Transmission Type: SYNC 0x01
+//	SDOManager->addSDO(new SDOTxPDO1SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
+//	///< Number of Mapped Application Objects
+//	SDOManager->addSDO(new SDOTxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+//	///< Mapping "Velocity actual value"
+//	SDOManager->addSDO(new SDOTxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60640020));
+//	///< Mapping "actual current value"
+//	SDOManager->addSDO(new SDOTxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60780010));
+//	///< Number of Mapped Application Objects
+//	SDOManager->addSDO(new SDOTxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
+
+// analog and current
 	SDOManager* SDOManager = bus_->getSDOManager();
 
 	// Transmit PDO 4 Parameter
 	///< configure COB-ID Transmit PDO 4
-	SDOManager->addSDO(new SDOTxPDO1ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	SDOManager->addSDO(new SDOTxPDO4ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	///< Set Transmission Type: SYNC 0x01
-	SDOManager->addSDO(new SDOTxPDO1SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
+	SDOManager->addSDO(new SDOTxPDO4SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
 	///< Number of Mapped Application Objects
-	SDOManager->addSDO(new SDOTxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+	SDOManager->addSDO(new SDOTxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	///< Mapping "Analog value"
-	SDOManager->addSDO(new SDOTxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x22050110));
+	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x22050110));
 	///< Mapping "Digital value"
-/*	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x22000020));*/
-	///< Mapping "actual current value"
-	SDOManager->addSDO(new SDOTxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60780010));
+	/*	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x22000020));*/
+
+	///< Mapping "actual current value - works!"
+	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60780010));
+
+
 	///< Number of Mapped Application Objects
-	SDOManager->addSDO(new SDOTxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
+	SDOManager->addSDO(new SDOTxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
+
+
 }
 
 void DeviceELMOMotor::configRxPDOProfileVelocity()
@@ -414,5 +441,30 @@ bool DeviceELMOMotor::getIsMotorDisabled(bool &flag)
 
 	return false;
 
+}
+
+bool DeviceELMOMotor::getAnalogInputOne(double& value)
+{
+	SDOManager* SDOManager = bus_->getSDOManager();
+
+
+	if (!sdoAnalogInputOne_->hasTimeOut()) {
+		if (!sdoAnalogInputOne_->getIsReceived()) {
+			if (!sdoAnalogInputOne_->getIsWaiting()) {
+				if (!sdoAnalogInputOne_->getIsQueuing()) {
+					SDOManager->addSDO((SDOMsgPtr)sdoAnalogInputOne_);
+				}
+			}
+		} else {
+			int val;
+			sdoAnalogInputOne_->getAnalog(val);
+			value = (double) val;
+			sdoAnalogInputOne_.reset();
+			sdoAnalogInputOne_ =  SDOGetAnalogInputOne::SDOGetAnalogInputOnePtr(new SDOGetAnalogInputOne(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+			return true;
+		}
+	}
+
+	return false;
 }
 

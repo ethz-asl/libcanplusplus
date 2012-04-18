@@ -1128,4 +1128,21 @@ public:
 	virtual ~SDOControlWord(){};
 };
 
+//////////////////////////////////////////////////////////////////////////////
+class SDOGetAnalogInputOne: public SDORead
+{
+public:
+	typedef boost::shared_ptr<SDOGetAnalogInputOne> SDOGetAnalogInputOnePtr;
+	SDOGetAnalogInputOne(int inSDOSMId, int outSDOSMId, int nodeId):
+		SDORead(inSDOSMId, outSDOSMId, nodeId, 0x2205, 0x01)
+	{};
+
+	virtual ~SDOGetAnalogInputOne(){};
+	virtual bool getAnalog(int &analog)
+	{
+		analog = data_;
+		return isReceived_;
+	}
+};
+
 #endif /* SDOEPOS2MOTOR_HPP_ */

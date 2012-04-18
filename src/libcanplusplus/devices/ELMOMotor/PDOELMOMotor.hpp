@@ -121,6 +121,62 @@ public:
 		flag_ = 1;
 	}
 };
+//////////////////////////////////////////////////////////////////////////////
+class RxPDOELMOBinaryInterpreterCmd: public CANOpenMsg {
+public:
+	RxPDOELMOBinaryInterpreterCmd(int nodeId, const char* cmd, unsigned char index, int SMId):CANOpenMsg(0x300+nodeId, SMId)
+	{
+		flag_ = 1;
+		value_[0] = cmd[0];
+		value_[1] = cmd[1];
+		value_[2] = index;
+		value_[3] = 64; // float
+		value_[4] = 0;
+		value_[5] = 0;
+		value_[6] = 0;
+		value_[7] = 0;
+
+		length_[0]=1;
+		length_[1]=1;
+		length_[2]=1;
+		length_[3] = 1;
+		length_[4] = 1;
+		length_[5] = 1;
+		length_[6] = 1;
+		length_[7] = 1;
+
+//		// transform into little endian format
+//			for (int i=0; i<4; i++)
+//				value_[4+i] = (cmdValue>>(i*8)) & 0xff;
+//
+//			if(nodeId == 0){
+//				// all nodes
+//				length_[0]=1;
+//				length_[1]=1;
+//				length_[2]=1;
+//				length_[3]=1;
+//				value_[0]=1; 	//Set Elmo to remote access
+//				value_[1]=0; 	//message sent to all Elmos
+//				}
+//			else{
+//				length_[0] = 1;
+//				length_[1] = 1;
+//				length_[2] = 1;
+//				length_[3] = 1;
+//				length_[4] = 1;
+//				length_[5] = 1;
+//				length_[6] = 1;
+//				length_[7] = 1;
+//			}
+
+	};
+
+	virtual ~RxPDOELMOBinaryInterpreterCmd() {
+
+	};
+
+};
+
 
 //////////////////////////////////////////////////////////////////////////////
 class TxPDOPositionVelocity: public CANOpenMsg {
@@ -161,7 +217,7 @@ private:
 //////////////////////////////////////////////////////////////////////////////
 class TxPDOAnalogCurrent: public CANOpenMsg {
 public:
-	TxPDOAnalogCurrent(int nodeId, int SMId):CANOpenMsg(0x180+nodeId, SMId)
+	TxPDOAnalogCurrent(int nodeId, int SMId):CANOpenMsg(0x480+nodeId, SMId)
 	{
 
 	};
@@ -170,8 +226,32 @@ public:
 
 	virtual void processMsg()
 	{
-		analog_ = (value_[0] + (value_[1]<<8));
-		current_ = (value_[2] + (value_[3]<<8));
+//		analog_ = (signed short)(value_[0] + (value_[1]<<8));//*0.00067139;
+//		current_ = (signed short)(value_[2] + (value_[3]<<8));
+//
+//		analog_ = (value_[0] + (value_[1]<<8) + (value_[2]<<16) + (value_[3]<<24));
+//		short val;
+//		val = (value_[4] + (value_[5]<<8));
+//		current_ = int(val);
+
+//		analog_ = (value_[0] + (value_[1]<<8));
+//		current_ = (value_[4] + (value_[5]<<8));
+
+//		short val;
+//		val = (value_[0] + (value_[1]<<8));
+//		analog_ = int(val);
+//		val = (value_[4] + (value_[5]<<8));
+//		current_ = int(val);
+
+//		signed short int val;
+//		val = (value_[0] + (value_[1]<<8));
+//		analog_ = (double(val))*0.00067139;
+		short val;
+		val = (value_[0] + (value_[1]<<8));
+		analog_ = int(val);
+
+		val = (value_[2] + (value_[3]<<8));
+		current_ = int(val);
 	};
 
 	int getAnalog()

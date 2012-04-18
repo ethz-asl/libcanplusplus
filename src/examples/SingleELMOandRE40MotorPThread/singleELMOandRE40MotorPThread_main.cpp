@@ -65,21 +65,23 @@ enum TxPDOs {
 
 //! shared memory ID of sent messages
 enum DESSMID {
-	DESSMID_RxPDO_SYNC = 1,
-	DESSMID_RxPDO_MOTOR = 0,
-	DESSMID_SDO = 2,
+	DESSMID_RxPDO_SYNC = 2,
+	DESSMID_RxPDO_PROFILE = 0,
+	DESSMID_RxPDO_ELMO_BIC = 1,
+	DESSMID_SDO = 3,
 };
 
 //! shared memory ID of received messages
 enum MEASSMID {
-	MEASSMID_TxPDO_MOTOR = 0,
+	MEASSMID_TxPDO_POSITION_VELOCITY = 0,
 	MEASSMID_SDO_MOTOR = 1,
-	MEASSMID_TxPDO_ANALOG_CURRENT = 2
+	MEASSMID_TxPDO_CURRENT = 2,
+	MEASSMID_TxPDO_ANALOG = 3
 };
 
 //! CAN Node ID given by the DIP switches
 enum CANNODEID {
-	NODEID_MOTOR=1,
+	NODEID_MOTOR=8,
 };
 
 
@@ -183,7 +185,7 @@ int main(int argc, char** args)
 
 	/* initialize the initial arguments of the bus routines */
 	for (int i=0; i<nBuses; i++) {
-		busRoutineArgs[i].iBus = 5;
+		busRoutineArgs[i].iBus = i;
 		busRoutineArgs[i].time_step_ms = time_step_ms;
 	}
 
@@ -191,7 +193,16 @@ int main(int argc, char** args)
 	for (int iBus=0; iBus<nBuses; iBus++) {
 		busManager.addBus(new Bus(iBus));
 		busManager.getBus(iBus)->getRxPDOManager()->addPDO(new RxPDOSync(DESSMID_RxPDO_SYNC));
-		busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOMotor(NODEID_MOTOR, new Maxon_REmax24_Enc500(DESSMID_RxPDO_MOTOR, MEASSMID_TxPDO_MOTOR, MEASSMID_TxPDO_ANALOG_CURRENT, MEASSMID_SDO_MOTOR, DESSMID_SDO)));
+		//busManager.getBus(iBus)->getRxPDOManager()->addPDO(new RxPDOELMOBinaryInterpreterCmd(DESSMID_RxPDO_ELMO_BIC));
+		busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOMotor(NODEID_MOTOR, new Maxon_REmax24_Enc500(
+																														DESSMID_RxPDO_PROFILE,
+																														0,
+																														0,
+																														MEASSMID_TxPDO_ANALOG,
+																														MEASSMID_TxPDO_POSITION_VELOCITY,
+																														MEASSMID_TxPDO_CURRENT,
+																														MEASSMID_SDO_MOTOR,
+																														DESSMID_SDO)));
 	}
 
 	/* initialize desired CAN commands to zero */
@@ -302,7 +313,7 @@ void *main_routine(void *arg)
 //					motor->executeCommandBegin();
 				}
 				printf("run motor\n");
-				stateSM = SM_RUN_PROFILE_POSITION;
+				stateSM = SM_RUN;
 			}
 			break;
 		case SM_RUN:
@@ -327,7 +338,7 @@ void *main_routine(void *arg)
 		case SM_RUN_PROFILE_POSITION_PART2:
 		{
 			double pos = 0.3+0.2*sin(0.1*2*M_PI*(counter*time_step_ms/1000.0));
-			printf("desired position=%lf\n", pos);
+			//printf("desired position=%lf\n", pos);
 			setMotorPosition(pos);
 			printPositionVelocity();
 			if (counter*time_step_ms/1000.0 > 60.0) {
@@ -667,11 +678,17 @@ int getMsgIdxFromCOBId(int iBus, int COBId)
 	switch (COBId) {
 	// Motor TxPDO
 	case TxPDO1Id+NODEID_MOTOR:
+		printf("received PDO1\n");
+		return MEASSMID_TxPDO_ANALOG;
+		break;
 	case TxPDO2Id+NODEID_MOTOR:
+		printf("received PDO2\n");
+		return MEASSMID_TxPDO_ANALOG;
+		break;
 	case TxPDO3Id+NODEID_MOTOR:
-		return MEASSMID_TxPDO_MOTOR;
+		return MEASSMID_TxPDO_POSITION_VELOCITY;
 	case TxPDO4Id+NODEID_MOTOR:
-		return MEASSMID_TxPDO_ANALOG_CURRENT;
+		return MEASSMID_TxPDO_CURRENT;
 	// Motor  SDO
 	case SDOId+NODEID_MOTOR:
 	case NMTEnteredPreOperational+NODEID_MOTOR:
@@ -843,6 +860,10 @@ void printPositionVelocity(void)
 		printf("Bus%d: position=%f [rad]\tvelocity=%f [rad/s]\n", iBus, position, velocity);
 		analog = motor->getAnalog();
 		current = motor->getCurrent();
-		printf("Bus%d: analog=%lf \tcurrent=%lf\n", iBus, analog,current);
+		printf("Bus%d: analog=%f \tcurrent=%f\n", iBus, analog, current);
+//		double value;
+//		if (motor->getAnalogInputOne(value)) {
+//			printf("Bus%d: analog=%f\n",iBus, value);
+//		}
 	}
 }
