@@ -106,7 +106,7 @@ void DeviceELMOBaseMotor::setMotorParameters()
 
 bool DeviceELMOBaseMotor::initDevice()
 {
-	configTxPDOs();
+
 	return true;
 }
 

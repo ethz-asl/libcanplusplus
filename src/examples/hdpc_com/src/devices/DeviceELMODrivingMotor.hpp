@@ -61,7 +61,7 @@ public:
 	 * Converts the velocity to the desired motor velocity [rpm]
 	 * @param velocity 		motor velocity [rad/s]
 	 */
-	virtual void setVelocity(double velocity);
+	virtual void setProfileVelocity(double velocity);
 
 protected:
 	//! PDO message to send motor velocity command

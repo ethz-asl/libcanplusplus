@@ -85,6 +85,12 @@ public:
 	//! reference to bus manager
 	BusManager* busManager_;
 
+
+	bool isInStFault_;
+
+	//! commands that are received by commandsCallback()
+	hdpc_com::Commands commands_;
+
 	/*! Constructor
 	 *
 	 * @param busManager
@@ -113,8 +119,7 @@ private:
 	//! publisher
 	ros::Publisher ros_pub_;
 
-	//! commands that are received by commandsCallback()
-	hdpc_com::Commands commands_;
+
 
 	//! readings that are published
 	hdpc_com::Readings readings_;

@@ -13,9 +13,13 @@
 #include "DeviceELMODrivingMotor.hpp"
 #include "DeviceELMOSteeringMotor.hpp"
 
-HDPCStateMachine::HDPCStateMachine(BusManager* busManager):busManager_(busManager)
+HDPCStateMachine::HDPCStateMachine(BusManager* busManager):busManager_(busManager),isInStFault_(false)
 {
-
+	//DeviceManager* devices = busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < commands_.command.size(); iDevice++) {
+		commands_.isActive[iDevice] = false;
+		commands_.command[iDevice] = 0.0;
+	}
 }
 
 HDPCStateMachine::~HDPCStateMachine()

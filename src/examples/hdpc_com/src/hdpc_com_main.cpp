@@ -29,7 +29,8 @@
 
 /* devices */
 #include "DeviceELMODrivingMotor.hpp"
-//#include "DeviceELMOMotorParametersESA.hpp"
+#include "DeviceELMOSteeringMotor.hpp"
+#include "DeviceELMOMotorParametersDrivingAndSteering.hpp"
 
 using namespace std;
 
@@ -46,7 +47,7 @@ const int nBuses = 1;
 
 
 //! cycle rate of loop in millisec
-const double time_step_ms = 100;//2.5;
+const double time_step_ms = 10;//2.5;
 
 //! bus rate
 int motor_servo_rate = (int) 1000.0/time_step_ms;
@@ -97,7 +98,7 @@ int main(int argc, char** argv)
 
 	/* initialize the initial arguments of the bus routines */
 	for (int i=0; i<nBuses; i++) {
-		busRoutineArgs[i].iBus = 5;
+		busRoutineArgs[i].iBus = 0;
 		busRoutineArgs[i].time_step_ms = time_step_ms;
 	}
 
@@ -105,7 +106,34 @@ int main(int argc, char** argv)
 	for (int iBus=0; iBus<nBuses; iBus++) {
 		busManager.addBus(new Bus(iBus));
 		busManager.getBus(iBus)->getRxPDOManager()->addPDO(new RxPDOSync(DESSMID_RxPDO_SYNC));
-	//	busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOMotor(NODEID_MOTOR, new Maxon_REmax24_Enc500(DESSMID_RxPDO_MOTOR, MEASSMID_TxPDO_MOTOR, MEASSMID_TxPDO_ANALOG_CURRENT, MEASSMID_SDO_MOTOR, DESSMID_SDO)));
+
+		/* add 6 driving motors */
+		for (int iDevice=0; iDevice < 6; iDevice++) {
+			busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMODrivingMotor(NODEID_ELMO0, new Maxon_RE40_Enc500(
+																														DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
+																														0,
+																														0,
+																														0,
+																														MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+iDevice,
+																														MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+iDevice,
+																														MEASSMID_SDO_ELMO0+iDevice,
+																														DESSMID_SDO_ELMO0+iDevice)));
+
+		}
+		/* add 4 steering motors */
+		for (int iDevice=6; iDevice < 10; iDevice++) {
+			busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOSteeringMotor(NODEID_ELMO0, new Maxon_REmax24_Enc500(
+																														DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
+																														0,
+																														0,
+																														0,
+																														MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+iDevice,
+																														MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+iDevice,
+																														MEASSMID_SDO_ELMO0+iDevice,
+																														DESSMID_SDO_ELMO0+iDevice)));
+
+		}
+
 	}
 
 	/* initialize desired CAN commands to zero */
@@ -158,9 +186,9 @@ int main(int argc, char** argv)
 		 * RUN TASK
 		 *******************************************************/
 		ros::spinOnce();
-
 		stateMachine.process_event( EvExecute() );
 		stateMachine.publishReadings();
+
 		/*******************************************************
 		 * FILL CAN MESSAGES TO SEND
 		 *******************************************************/
@@ -181,12 +209,14 @@ int main(int argc, char** argv)
 					pdoManager->getPDO(iPDO)->getCANMsg(&canDataDes[iBus][smId]);
 				}
 			}
+
 			/* SDO */
 			SDOMsg* sdo = bus->getSDOManager()->getSendSDO();
 			int smId = sdo->getOutputMsg()->getSMId();
 			if (smId != -1) {
 				sdo->sendMsg(&canDataDes[iBus][smId]);
 			}
+
 		}
 
 		/*******************************************************
@@ -235,12 +265,12 @@ void *bus_routine(void *arg)
 	struct	BusRoutineArguments *busRoutineArgs = (struct BusRoutineArguments*) arg;
 
 
-//	/* **************************
-//	 * CAN DRIVER SETUP
-//	 ***************************/
-//	for (int i=0; i<nBuses; i++) {
-//		//! devices are  not unplugged
-//		unpluggedBus[i] = false;
+	/* **************************
+	 * CAN DRIVER SETUP
+	 ***************************/
+	for (int i=0; i<nBuses; i++) {
+		//! devices are  not unplugged
+		unpluggedBus[i] = false;
 //
 //		/* open channel */
 //		sprintf(channelname, "CHAN0%d", busRoutineArgs[i].iBus);
@@ -288,7 +318,7 @@ void *bus_routine(void *arg)
 //		// switch on transmission of CAN messages from CPC to PC
 //		printf("Switching ON transimssion of CAN messages from CPC to PC\n");
 //		CPC_Control(busRoutineArgs[i].handle, CONTR_CAN_Message | CONTR_CONT_ON);
-//	}
+	}
 
 	// initialize time
 	gettimeofday(&start_tp, NULL);

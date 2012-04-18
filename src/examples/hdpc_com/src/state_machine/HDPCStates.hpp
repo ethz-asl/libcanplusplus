@@ -23,6 +23,7 @@ namespace mpl = boost::mpl;
 
 //////////////////////////////////////////////////////////////////////////////
 struct StInit;
+struct StStop;
 struct StTop : sc::state< StTop, HDPCStateMachine, StInit >
 {
   public:

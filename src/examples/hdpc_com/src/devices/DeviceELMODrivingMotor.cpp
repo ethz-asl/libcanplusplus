@@ -33,7 +33,7 @@ void DeviceELMODrivingMotor::addRxPDOs()
 
 }
 
-void DeviceELMODrivingMotor::setVelocity(double jointVelocity_rad_s)
+void DeviceELMODrivingMotor::setProfileVelocity(double jointVelocity_rad_s)
 {
 	int jointVelocity_counts_s = jointVelocity_rad_s * deviceParams_->rad_s_Gear_to_counts_s_Motor;
 	rxPDOVelocity_->setVelocity(jointVelocity_counts_s);

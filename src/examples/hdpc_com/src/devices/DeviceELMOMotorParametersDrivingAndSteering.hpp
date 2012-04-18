@@ -9,8 +9,8 @@
  */
 
 
-#ifndef DEVICEELMOMOTORPARAMETERSHDPC_HPP_
-#define DEVICEELMOMOTORPARAMETERSHDPC_HPP_
+#ifndef DEVICEELMOMOTORPARAMETERSDRIVINGANDSTEERING_HPP_
+#define DEVICEELMOMOTORPARAMETERSDRIVINGANDSTEERING_HPP_
 
 
 #include "DeviceELMOMotorParametersHDPC.hpp"
@@ -27,7 +27,7 @@ struct Maxon_RE40_Enc500 : DeviceELMOMotorParametersHDPC {
 	  int txPDO4SMId,
 	  int inSDOSMId,
 	  int outSDOSMId):
-	  DeviceELMOMotorParameters(rxPDO1SMId,
+		  DeviceELMOMotorParametersHDPC(rxPDO1SMId,
 								  rxPDO2SMId,
 								  txPDO1SMId,
 								  txPDO2SMId,
@@ -94,7 +94,7 @@ struct Maxon_REmax24_Enc500 : DeviceELMOMotorParametersHDPC {
 	  int txPDO4SMId,
 	  int inSDOSMId,
 	  int outSDOSMId):
-	  DeviceELMOMotorParameters(  rxPDO1SMId,
+		  DeviceELMOMotorParametersHDPC(  rxPDO1SMId,
 								  rxPDO2SMId,
 								  txPDO1SMId,
 								  txPDO2SMId,
