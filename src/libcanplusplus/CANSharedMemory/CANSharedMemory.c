@@ -91,9 +91,9 @@ extern "C" {
 #endif
 
 //! number of measurement messages per Bus (6xPDOPositionVelocity + 6xSDO)
-const int nMeasMsg = (3+3)+(3+3);
+const int nMeasMsg = 30;
 //! number of desired messages per Bus (3xPDOVelocity + 1xPDOSync + 1xSDO)
-const int nDesMsg = 10;
+const int nDesMsg = 21;
 
 
 int
