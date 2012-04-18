@@ -75,10 +75,10 @@ void HDPCStateMachine::publishReadings()
 	DeviceManager* devices = busManager_->getBus(0)->getDeviceManager();
 	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
 		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
-		readings_.position = motor->getPosition();
-		readings_.velocity = motor->getVelocity();
-		readings_.analog = motor->getAnalog();
-		readings_.current = motor->getCurrent();
+		readings_.position[iDevice] = motor->getPosition();
+		readings_.velocity[iDevice] = motor->getVelocity();
+		readings_.analog[iDevice] = motor->getAnalog();
+		readings_.current[iDevice] = motor->getCurrent();
 	}
 
 	/* publish readings */
