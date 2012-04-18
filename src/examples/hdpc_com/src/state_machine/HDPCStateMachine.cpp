@@ -1,10 +1,12 @@
-/*
- * HDPCStateMachine.cpp
+/*!
+ * @file 	HDPCStateMachine.cpp
+ * @brief	State machine for HDPC
+ * @author 	Christian Gehring
+ * @date 	Apr, 2012
+ * @version 1.0
+ * @ingroup robotCAN, device
  *
- *  Created on: Apr 15, 2012
- *      Author: gech
  */
-
 #include "HDPCStateMachine.hpp"
 
 #include "DeviceELMOBaseMotor.hpp"
@@ -64,9 +66,9 @@ bool HDPCStateMachine::srvChangeState(hdpc_com::ChangeStateMachine::Request  &re
 	return true;
 }
 
-void HDPCStateMachine::commandsCallback(const hdpc_com::Commands::ConstPtr& msg)
+void HDPCStateMachine::commandsCallback(hdpc_com::Commands msg)
 {
-
+	commands_ = msg;
 }
 
 void HDPCStateMachine::publishReadings()

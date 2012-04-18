@@ -13,7 +13,7 @@
 
 #include "DeviceELMOBaseMotor.hpp"
 
-//! EPOS2 Device
+//! ELMO Driving Motor Device
 /*! This class configures and manages the ELMOs that control the driving motors of the HDPC.
  * @ingroup robotCAN, device
  */

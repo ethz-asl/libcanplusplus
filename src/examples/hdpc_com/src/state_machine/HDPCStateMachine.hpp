@@ -1,8 +1,11 @@
-/*
- * HDPCStateMachine.hpp
+/*!
+ * @file 	HDPCStateMachine.hpp
+ * @brief	State machine for HDPC
+ * @author 	Christian Gehring
+ * @date 	Apr, 2012
+ * @version 1.0
+ * @ingroup robotCAN, device
  *
- *  Created on: Apr 15, 2012
- *      Author: gech
  */
 
 #ifndef HDPCSTATEMACHINE_HPP_
@@ -12,7 +15,6 @@
 #include "hdpc_com/ChangeStateMachine.h"
 #include "hdpc_com/Commands.h"
 #include "hdpc_com/Readings.h"
-
 
 
 #include <boost/statechart/event.hpp>
@@ -51,12 +53,14 @@ struct EvReseting : sc::event< EvReseting > {};
 struct EvStarting : sc::event< EvStarting > {};
 
 //////////////////////////////////////////////////////////////////////////////
-//class HDPCStateMachine {
+
 struct StTop;
 struct HDPCStateMachine;
+//! State machine of the HDPC
 struct HDPCStateMachine : sc::state_machine<HDPCStateMachine, StTop>
 {
 public:
+	//! States that are returned by srvChangeState()
 	enum HDPCSTATE {
 		SM_INITIALIZING = 0,
 		SM_STOPPING,
@@ -66,6 +70,8 @@ public:
 		SM_RESETING,
 		SM_FAULT
 	};
+
+	//! Events that are allowed to be received by srvChangeState()
 	enum HDPCEVENT {
 		EVENT_READSTATEONLY = 0,
 		EVENT_STOPPING,
@@ -85,6 +91,8 @@ public:
 	 * @return
 	 */
 	HDPCStateMachine(BusManager* busManager);
+
+	//! Destructor
 	virtual ~HDPCStateMachine();
 
 	//! initialize ROS stuff
@@ -105,7 +113,10 @@ private:
 	//! publisher
 	ros::Publisher ros_pub_;
 
+	//! commands that are received by commandsCallback()
 	hdpc_com::Commands commands_;
+
+	//! readings that are published
 	hdpc_com::Readings readings_;
 
 
@@ -113,14 +124,16 @@ private:
 	 *
 	 * @param req	request
 	 * @param res	response
-	 * @return
+	 * @return	true if successful
 	 */
 	bool srvChangeState(hdpc_com::ChangeStateMachine::Request  &req,
 			hdpc_com::ChangeStateMachine::Response &res );
 
 
-	//! callback function for commands message
-	void commandsCallback(const hdpc_com::Commands::ConstPtr& msg);
+	/*! callback function for commands message
+	 * @param msg	received message
+	 */
+	void commandsCallback(hdpc_com::Commands msg);
 
 
 };

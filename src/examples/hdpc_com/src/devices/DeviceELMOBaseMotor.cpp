@@ -1,8 +1,8 @@
 /*!
  * @file 	DeviceELMOBaseMotor.cpp
- * @brief
+ * @brief	Base motor class for steering and driving motor
  * @author 	Christian Gehring
- * @date 	Jan, 2012
+ * @date 	April, 2012
  * @version 1.0
  * @ingroup robotCAN, device
  *

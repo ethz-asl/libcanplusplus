@@ -1,8 +1,11 @@
-/*
- * HDPCStates.hpp
+/*!
+ * @file 	HDPCStates.hpp
+ * @brief	States of the state machine for HDPC
+ * @author 	Christian Gehring
+ * @date 	Apr, 2012
+ * @version 1.0
+ * @ingroup robotCAN, device
  *
- *  Created on: Apr 16, 2012
- *      Author: gech
  */
 
 #ifndef HDPCSTATES_HPP_
@@ -54,6 +57,32 @@ struct StInit : sc::state< StInit, StTop >
     sc::result react( const EvExecute& );
     sc::result react( const EvEmergencyStop& );
     sc::result react( const EvStateInfo& );
+  private:
+    int iDevice_;
+    int waitForDeviceCount_;
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+struct StHoming : sc::state< StHoming, StTop >
+{
+  public:
+    typedef mpl::list<
+      sc::custom_reaction< EvExecute >,
+      sc::custom_reaction< EvEmergencyStop >,
+      sc::custom_reaction< EvStateInfo >
+    > reactions;
+
+    StHoming( my_context ctx );
+    virtual ~StHoming();
+
+    sc::result react( const EvExecute& );
+    sc::result react( const EvEmergencyStop& );
+    sc::result react( const EvStateInfo& );
+  private:
+    int iDevice_;
+    int waitForDeviceCount_;
+
 
 };
 

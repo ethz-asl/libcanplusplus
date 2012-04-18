@@ -14,8 +14,8 @@
 #include "DeviceELMOBaseMotor.hpp"
 
 
-//! EPOS2 Device
-/*! This class configures and manages the EPOS2 70/10 that control the motors of StarlETH.
+//! ELMO steering Motor Device
+/*! This class configures and the ELMOs that control the steering motors of the HDPC.
  * @ingroup robotCAN, device
  */
 class DeviceELMOSteeringMotor: public DeviceELMOBaseMotor {
