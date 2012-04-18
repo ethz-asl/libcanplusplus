@@ -146,6 +146,46 @@ struct StDrive : sc::state< StDrive, StTop >
 };
 
 //////////////////////////////////////////////////////////////////////////////
+struct StDriveTestDrivingMotor : sc::state< StDriveTestDrivingMotor, StTop >
+{
+  public:
+    typedef mpl::list<
+      sc::custom_reaction< EvExecute >,
+      sc::custom_reaction< EvEmergencyStop >,
+      sc::custom_reaction< EvStateInfo>,
+	  sc::transition<EvStopping, StStopping>
+    > reactions;
+
+    StDriveTestDrivingMotor( my_context ctx );
+    virtual ~StDriveTestDrivingMotor();
+
+    sc::result react( const EvExecute& );
+    sc::result react( const EvEmergencyStop& );
+    sc::result react( const EvStateInfo& );
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
+struct StDriveTestSteeringMotor : sc::state< StDriveTestSteeringMotor, StTop >
+{
+  public:
+    typedef mpl::list<
+      sc::custom_reaction< EvExecute >,
+      sc::custom_reaction< EvEmergencyStop >,
+      sc::custom_reaction< EvStateInfo>,
+	  sc::transition<EvStopping, StStopping>
+    > reactions;
+
+    StDriveTestSteeringMotor( my_context ctx );
+    virtual ~StDriveTestSteeringMotor();
+
+    sc::result react( const EvExecute& );
+    sc::result react( const EvEmergencyStop& );
+    sc::result react( const EvStateInfo& );
+
+};
+
+//////////////////////////////////////////////////////////////////////////////
 struct StFault : sc::state< StFault, StTop >
 {
   public:

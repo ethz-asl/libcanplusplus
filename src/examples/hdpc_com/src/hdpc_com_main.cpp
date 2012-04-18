@@ -158,8 +158,9 @@ int main(int argc, char** argv)
 		 * RUN TASK
 		 *******************************************************/
 		ros::spinOnce();
+
 		stateMachine.process_event( EvExecute() );
-		//stateMachine.execute();
+		stateMachine.publishReadings();
 		/*******************************************************
 		 * FILL CAN MESSAGES TO SEND
 		 *******************************************************/

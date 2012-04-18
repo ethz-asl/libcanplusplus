@@ -1,6 +1,3 @@
 Header header
-int32[] ControlModeh
-float64[] DesJointVelocity
-float64[] SteeringVelocitiesRel
-float64[] DrivingVelocitiesMpS
-float64[] DrivingCurrentsMa
+float32[10] isActive
+float32[10] command

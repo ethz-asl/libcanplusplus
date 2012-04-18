@@ -90,7 +90,8 @@ public:
 	//! initialize ROS stuff
 	void initROS();
 
-
+	//! Read out measurements from CAN message and publish them
+	void publishReadings();
 private:
 	//! Node handle
 	boost::shared_ptr<ros::NodeHandle> ros_node_;
@@ -121,8 +122,7 @@ private:
 	//! callback function for commands message
 	void commandsCallback(const hdpc_com::Commands::ConstPtr& msg);
 
-	//! Read out measurements from CAN message and publish them
-	void publishReadings();
+
 };
 
 #include "HDPCStates.hpp"

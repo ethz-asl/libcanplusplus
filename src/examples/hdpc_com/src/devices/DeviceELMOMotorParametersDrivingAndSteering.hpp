@@ -52,6 +52,8 @@ struct Maxon_RE40_Enc500 : DeviceELMOMotorParametersHDPC {
 		pole_pair_number  = 1;			// ok
 		thermal_time_constant_winding = 416; //[1/10 s]		// ok
 
+		profileVelocityInPPMode = 40000;  // [rpm] ok
+
 		//Default control mode
 		operationMode = OPERATION_MODE_PROFILE_VELOCITY; //OPERATION_MODE_PROFILE_VELOCITY; //OPERATION_MODE_PROFILE_POSITION;
 
@@ -133,6 +135,8 @@ struct Maxon_REmax24_Enc500 : DeviceELMOMotorParametersHDPC {
 
 		continuous_current_limit = 0.516;	//[A] ok
 		output_current_limit	  = 1.1;//[A]
+
+		profileVelocityInPPMode = 40000;  // [rpm] ok
 
 		max_profile_velocity =    M_PI/2.0;		//[rad/s] of Gear output
 		profile_acceleration	= 32*M_PI;			//[rad/s2]

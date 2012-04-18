@@ -81,6 +81,10 @@ public:
 	//! maximal following error [rad] (maximal allowed difference of position actual value to position demand value)
 	double max_following_error;
 
+	//! profile velocity in profile position mode [rpm]
+	int profileVelocityInPPMode;
+
+
 	//Conversion variables:
 	double TICKS_TO_RAD;
 	double RAD_TO_TICKS;

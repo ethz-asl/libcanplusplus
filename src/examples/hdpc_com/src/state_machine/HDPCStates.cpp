@@ -343,6 +343,82 @@ sc::result StDrive::react( const EvStateInfo& )
 	return discard_event();
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+StDriveTestDrivingMotor::StDriveTestDrivingMotor( my_context ctx ) :
+  my_base( ctx )
+{
+	ROS_INFO("Entering StDriveTestDrivingMotor");
+}
+
+StDriveTestDrivingMotor::~StDriveTestDrivingMotor() {
+	ROS_INFO("Exiting StDriveTestDrivingMotor");
+}
+
+sc::result StDriveTestDrivingMotor::react( const EvExecute& )
+{
+	outermost_context_type & machine = outermost_context();
+
+	/* initialize all devices */
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->initDevice();
+	}
+
+	return discard_event();
+}
+
+sc::result StDriveTestDrivingMotor::react( const EvEmergencyStop& )
+{
+	return forward_event();
+}
+
+sc::result StDriveTestDrivingMotor::react( const EvStateInfo& )
+{
+	outermost_context().actualState_ = HDPCStateMachine::SM_DRIVE;
+	ROS_INFO("StDriveTestDrivingMotor");
+	return discard_event();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+StDriveTestSteeringMotor::StDriveTestSteeringMotor( my_context ctx ) :
+  my_base( ctx )
+{
+	ROS_INFO("Entering StDriveTestSteeringMotor");
+}
+
+StDriveTestSteeringMotor::~StDriveTestSteeringMotor() {
+	ROS_INFO("Exiting StDriveTestSteeringMotor");
+}
+
+sc::result StDriveTestSteeringMotor::react( const EvExecute& )
+{
+	outermost_context_type & machine = outermost_context();
+
+	/* initialize all devices */
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->initDevice();
+	}
+
+	return discard_event();
+}
+
+sc::result StDriveTestSteeringMotor::react( const EvEmergencyStop& )
+{
+	return forward_event();
+}
+
+sc::result StDriveTestSteeringMotor::react( const EvStateInfo& )
+{
+	outermost_context().actualState_ = HDPCStateMachine::SM_DRIVE;
+	ROS_INFO("StDriveTestSteeringMotor");
+	return discard_event();
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 StFault::StFault( my_context ctx ) :
   my_base( ctx )
