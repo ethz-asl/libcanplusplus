@@ -24,7 +24,7 @@ public:
 	 * @param nodeId	CAN node ID
 	 * @param deviceParams	parameter struct
 	 */
-	DeviceELMODrivingMotor(int nodeId, DeviceELMOMotorParameters* deviceParams);
+	DeviceELMODrivingMotor(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams);
 
 	//! Destructor
 	virtual ~DeviceELMODrivingMotor();

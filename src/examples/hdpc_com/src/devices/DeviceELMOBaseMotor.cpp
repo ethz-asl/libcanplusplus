@@ -13,7 +13,7 @@
 #include <math.h>
 
 
-DeviceELMOBaseMotor::DeviceELMOBaseMotor(int nodeId, DeviceELMOMotorParameters* deviceParams)
+DeviceELMOBaseMotor::DeviceELMOBaseMotor(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams)
 :Device(nodeId),deviceParams_(deviceParams)
 {
 	sdoStatusWord_ =  SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
@@ -29,7 +29,7 @@ DeviceELMOBaseMotor::~DeviceELMOBaseMotor()
 }
 
 
-DeviceELMOMotorParameters* DeviceELMOBaseMotor::getDeviceParams()
+DeviceELMOMotorParametersHDPC* DeviceELMOBaseMotor::getDeviceParams()
 {
 	return deviceParams_;
 }
@@ -42,10 +42,11 @@ void DeviceELMOBaseMotor::addRxPDOs()
 void DeviceELMOBaseMotor::addTxPDOs()
 {
 	/* add PositionVelocity TxPDO */
-	txPDOPositionVelocity_ = new TxPDOPositionVelocity(nodeId_, deviceParams_->txPDOSMId_);
+	txPDOPositionVelocity_ = new TxPDOPositionVelocity(nodeId_, deviceParams_->txPDO3SMId_);
 	bus_->getTxPDOManager()->addPDO(txPDOPositionVelocity_);
 
-	txPDOAnalogCurrent_ = new TxPDOAnalogCurrent(nodeId_, deviceParams_->txPDO2SMId_);
+	/* add AnalogCurrent TxPDO */
+	txPDOAnalogCurrent_ = new TxPDOAnalogCurrent(nodeId_, deviceParams_->txPDO4SMId_);
 	bus_->getTxPDOManager()->addPDO(txPDOAnalogCurrent_);
 }
 
@@ -142,9 +143,9 @@ void DeviceELMOBaseMotor::configTxPDOPositionVelocity()
 	///< Mapping "Position actual value"
 	SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60640020));
 	///< Mapping "demand Velocity actual value"
-	// velocity demand value 0x606B0020
+	// velocity demand value 0x606B0020 (working)
 	// velocity target value 0x60FF0020
-	SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x606B0020));
+	SDOManager->addSDO(new SDOTxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60690020));
 	///< Number of Mapped Application Objects
 	SDOManager->addSDO(new SDOTxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
 
@@ -156,19 +157,22 @@ void DeviceELMOBaseMotor::configTxPDOAnalogCurrent()
 
 	// Transmit PDO 4 Parameter
 	///< configure COB-ID Transmit PDO 4
-	SDOManager->addSDO(new SDOTxPDO1ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	SDOManager->addSDO(new SDOTxPDO4ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	///< Set Transmission Type: SYNC 0x01
-	SDOManager->addSDO(new SDOTxPDO1SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
+	SDOManager->addSDO(new SDOTxPDO4SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
 	///< Number of Mapped Application Objects
-	SDOManager->addSDO(new SDOTxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+	SDOManager->addSDO(new SDOTxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	///< Mapping "Analog value"
-	SDOManager->addSDO(new SDOTxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x22050110));
+	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x22050110));
 	///< Mapping "Digital value"
-/*	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x22000020));*/
-	///< Mapping "actual current value"
-	SDOManager->addSDO(new SDOTxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60780010));
+	/*	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x22000020));*/
+
+	///< Mapping "actual current value - works!"
+	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60780010));
+
 	///< Number of Mapped Application Objects
-	SDOManager->addSDO(new SDOTxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
+	SDOManager->addSDO(new SDOTxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
+
 }
 
 

@@ -16,13 +16,13 @@
 #include "SDOELMOMotor.hpp"
 
 /* include parameters */
-#include "DeviceELMOMotorParameters.hpp"
+#include "DeviceELMOMotorParametersHDPC.hpp"
 
 
 class Device;
 
 
-//! EPOS2 Device
+//! ELMO Base Device
 /*! This class configures and manages the ELMOs that control the driving motors of the HDPC.
  * @ingroup robotCAN, device
  */
@@ -33,7 +33,7 @@ public:
 	 * @param nodeId	CAN node ID
 	 * @param deviceParams	parameter struct
 	 */
-	DeviceELMOBaseMotor(int nodeId, DeviceELMOMotorParameters* deviceParams);
+	DeviceELMOBaseMotor(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams);
 
 	//! Destructor
 	virtual ~DeviceELMOBaseMotor();
@@ -87,10 +87,20 @@ public:
 	 */
 	virtual double getVelocity();
 
+	/*! Gets the current
+	 * @return current [mA]
+	 */
+	double getCurrent();
+
+	/*! Gets the analog signal
+	 * @return
+	 */
+	double getAnalog();
+
 	/*! Gets the reference to the device parameters
 	 * @return reference to the device parameters
 	 */
-	virtual DeviceELMOMotorParameters* getDeviceParams();
+	virtual DeviceELMOMotorParametersHDPC* getDeviceParams();
 
 	/*! Sends a SDO to check if the EPOS is enabled.
 	 * @param flag	true if EPOS is enabled
@@ -106,16 +116,6 @@ public:
 
 	/* configure at run-time */
 
-
-	/*! Gets the current
-	 * @return current [mA]
-	 */
-	double getCurrent();
-
-	/*! Gets the analog signal
-	 * @return
-	 */
-	double getAnalog();
 
 	/*! Sets the position limits of the joint
 	 * Converts the limits to motor position limits
@@ -138,7 +138,7 @@ protected:
 	TxPDOAnalogCurrent* txPDOAnalogCurrent_;
 
 	//! device parameters
-	DeviceELMOMotorParameters* deviceParams_;
+	DeviceELMOMotorParametersHDPC* deviceParams_;
 
 	//! SDO to read the status word
 	SDOReadStatusWord::SDOReadStatusWordPtr sdoStatusWord_;
