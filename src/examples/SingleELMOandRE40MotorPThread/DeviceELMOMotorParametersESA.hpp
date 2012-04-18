@@ -129,7 +129,7 @@ struct Maxon_REmax24_Enc500 : DeviceELMOMotorParameters {
 		 current_I_Gain  = 123;
 
 		positionLimits[0] = -M_PI/2;
-		positionLimits[1] = M_PI/2;
+		positionLimits[1] = 0.2; //M_PI/2;
 
 		continuous_current_limit = 0.516;	//[A] ok
 		output_current_limit	  = 1.1;//[A]
