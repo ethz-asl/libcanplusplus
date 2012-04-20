@@ -24,6 +24,8 @@
 #include "CANOpenMsg.hpp"
 #include <stdio.h>
 
+#include "StatusWordBits.hpp"
+
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOSync: public CANOpenMsg {
 public:
@@ -36,9 +38,11 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOVelocity: public CANOpenMsg {
 public:
-	RxPDOVelocity(int nodeId, int SMId):CANOpenMsg(0x300+nodeId, SMId)
+	RxPDOVelocity(int nodeId, int SMId):CANOpenMsg(0x300+nodeId, SMId),
+	isEnabled_(false)
 	{
-		value_[2] = 0x000F;		///< Controlword
+		//value_[2] = 0x000F;		///< Controlword (enable)
+		value_[2] = 0x0007;		///< Controlword (disable)
 		value_[0] = 0x03;		///< Profile Velocity Mode
 
 		length_[0] = 1;			///< Profile Velocity Mode
@@ -46,28 +50,47 @@ public:
 		length_[2] = 2;			///< Controlword
 	};
 
-	virtual ~RxPDOVelocity() {
-//		printf("~RxPDOVelocity()\n");
-	};
+	virtual ~RxPDOVelocity() {};
 
 	void setVelocity(int velocity)
 	{
-		value_[1] = velocity;
+		if (isEnabled_) {
+			value_[1] = velocity;
+			flag_ = 1;
+		}
+	};
+
+	void disable()
+	{
+		value_[1] = 0.0;
+		value_[2] = 0x0007;		///< Controlword (disable)
+		isEnabled_ = false;
 		flag_ = 1;
 	};
+
+	void enable()
+	{
+		value_[1] = 0.0;
+		value_[2] = 0x000F;		///< Controlword (enable)
+		isEnabled_ = true;
+		flag_ = 1;
+	};
+
+private:
+	bool isEnabled_;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOPosition: public CANOpenMsg {
 public:
-	RxPDOPosition(int nodeId, int SMId):CANOpenMsg(0x400+nodeId, SMId),isOn_(true)
+	RxPDOPosition(int nodeId, int SMId):CANOpenMsg(0x400+nodeId, SMId),isOn_(true),isEnabled_(false)
 	{
-		value_[1] = 0x003F;		///< Controlword 0x003F
-		//value_[0] = 0x01;		///< Profile Position Mode
+		value_[2] = 0x003F;		///< Controlword 0x003F
+		value_[0] = 0x01;		///< Profile Position Mode
 		//value_[3] = 60000;
-		//length_[0] = 1;			///< Profile Position Mode
-		length_[0] = 4;			///< Target Position
-		length_[1] = 2;			///< Controlword
+		length_[0] = 1;			///< Profile Position Mode
+		length_[1] = 4;			///< Target Position
+		length_[2] = 2;			///< Controlword
 		//length_[3] = 4;
 	};
 
@@ -77,20 +100,37 @@ public:
 
 	void setPosition(int position)
 	{
-		value_[0] = position;
-		//value_[1] = 0x003F;		///< Controlword 0x003F
-		flag_ = 1;
-		if (isOn_) {
-			value_[1] = 0x003F;
-			isOn_ = false;
-		} else {
-			value_[1] = 0x002F;
-			isOn_ = true;
+		if (isEnabled_) {
+			value_[1] = position;
+			//value_[1] = 0x003F;		///< Controlword 0x003F
+			flag_ = 1;
+			if (isOn_) {
+				value_[2] = 0x003F;
+				isOn_ = false;
+			} else {
+				value_[2] = 0x002F;
+				isOn_ = true;
+			}
 		}
+	};
+
+	void disable()
+	{
+		value_[2] = 0x0007;		///< Controlword (disable)
+		isEnabled_ = false;
+		flag_ = 1;
+	};
+
+	void enable()
+	{
+		value_[2] = 0x000F;		///< Controlword (enable)
+		isEnabled_ = true;
+		flag_ = 1;
 	};
 
 private:
 	bool isOn_;
+	bool isEnabled_;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -226,32 +266,15 @@ public:
 
 	virtual void processMsg()
 	{
-//		analog_ = (signed short)(value_[0] + (value_[1]<<8));//*0.00067139;
-//		current_ = (signed short)(value_[2] + (value_[3]<<8));
-//
-//		analog_ = (value_[0] + (value_[1]<<8) + (value_[2]<<16) + (value_[3]<<24));
-//		short val;
-//		val = (value_[4] + (value_[5]<<8));
-//		current_ = int(val);
 
-//		analog_ = (value_[0] + (value_[1]<<8));
-//		current_ = (value_[4] + (value_[5]<<8));
-
-//		short val;
-//		val = (value_[0] + (value_[1]<<8));
-//		analog_ = int(val);
-//		val = (value_[4] + (value_[5]<<8));
-//		current_ = int(val);
-
-//		signed short int val;
-//		val = (value_[0] + (value_[1]<<8));
-//		analog_ = (double(val))*0.00067139;
 		short val;
 		val = (value_[0] + (value_[1]<<8));
 		analog_ = int(val);
 
 		val = (value_[2] + (value_[3]<<8));
 		current_ = int(val);
+
+		statusword_ = (int)((unsigned short)(value_[4] + (value_[5]<<8)));
 	};
 
 	int getAnalog()
@@ -259,16 +282,57 @@ public:
 		return analog_;
 	};
 
-
 	int getCurrent()
 	{
 		return current_;
 	};
 
+	int getStatusword()
+	{
+		return statusword_;
+	};
+
+	bool isEnabled()
+	{
+		return (statusword_ & (1<<STATUSWORD_OPERATION_ENABLE_BIT));
+	};
+
+	bool isDisabled()
+	{
+		return !(statusword_ & (1<<STATUSWORD_OPERATION_ENABLE_BIT));
+	};
+
+	bool isSwitchedOn()
+	{
+		return (statusword_ & (1<<STATUSWORD_SWITCHED_ON_BIT));
+	};
+
+	bool isSwitchedOff()
+	{
+		return (statusword_ & (1<<STATUSWORD_SWITCH_ON_DISABLE_BIT));
+	};
+
+	bool isVoltageEnabled()
+	{
+		return (statusword_ & (1<<STATUSWORD_VOLTAGE_ENABLE_BIT));
+	};
+
+	bool isFault()
+	{
+		return (statusword_ & (1<<STATUSWORD_FAULT_BIT));
+	};
+
+	bool isInternalLimitActive()
+	{
+		return (statusword_ & (1<<STATUSWORD_INTERNAL_LIMIT_ACTIVE_BIT));
+	}
+
+
 
 private:
 	int analog_;
 	int current_;
+	int statusword_;
 
 };
 

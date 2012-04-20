@@ -63,6 +63,18 @@ static bool isTerminating = false;
 //! thread task
 pthread_t bus_task;
 
+//! slope and offset of analog value to abs joint position Voltage -> Degrees
+const double analogConversion[10][2] = {{0.0,0.0},
+						  {0.0,0.0},
+						{31.361,-52.869},
+						{-32.405,58.110},
+						{30.245,-58.682},
+						{-30.523,53.375},
+						{-91.227,222.928},
+						{-89.907,206.636},
+						{-89.953,214.747},
+						{-90.407,225.203}};
+
 /* Prototypes */
 
 //! thread function
@@ -73,6 +85,26 @@ void catch_signal(int sig);
 
 //! emegency stop
 void emergency_stop(void);
+
+/*! message handler function that is invoked in case a CAN message arrived
+ * @param 	handle			handle of the CAN bus given by CPC_OpenChannel()
+ * @param	cpcmsg			CAN message from CPC driver
+ * @param	customPointer 	custom pointer
+ */
+void msg_handler(int handle, const CPC_MSG_T * cpcmsg, void *customPointer);
+
+/*! Maps the COB ID of a CAN message to the index of shared memory.
+ * @param	iBus	number of bus
+ * @param 	COBId	COB Id of message
+ * @return the index of the shared memory. Returns -1 if there is no mapping
+ */
+int getMsgIdxFromCOBId(int iBus, int COBId);
+
+/*! Decodes an emergency object received from an EPOS
+ * @param	DATA	CAN message
+ * @return	true if it is really an error
+ */
+bool decodeEmergencyObject(unsigned char* DATA);
 
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
@@ -85,7 +117,7 @@ int main(int argc, char** argv)
 	atexit(removeSharedMemoryAtExit);
 	signal(SIGTERM, catch_signal);
 	signal(SIGINT, catch_signal);
-	signal(SIGSEGV, catch_signal);
+	//signal(SIGSEGV, catch_signal);
 
 	servo_base_rate = motor_servo_rate;
 
@@ -106,10 +138,69 @@ int main(int argc, char** argv)
 	for (int iBus=0; iBus<nBuses; iBus++) {
 		busManager.addBus(new Bus(iBus));
 		busManager.getBus(iBus)->getRxPDOManager()->addPDO(new RxPDOSync(DESSMID_RxPDO_SYNC));
+		//int iDevice=7;
+//		busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMODrivingMotor(NODEID_ELMO0+iDevice, new Maxon_RE40_Enc500(
+//																													DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
+//																													0,
+//																													0,
+//																													0,
+//																													MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+iDevice,
+//																													MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+iDevice,
+//																													MEASSMID_SDO_ELMO0+iDevice,
+//																													DESSMID_SDO_ELMO0+iDevice)));
+//
+//
+//
+//
+//		busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOSteeringMotor(NODEID_ELMO0+iDevice, new Maxon_REmax24_Enc512(
+//																													DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
+//																													0,
+//																													0,
+//																													0,
+//																													MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+iDevice,
+//																													MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+iDevice,
+//																													MEASSMID_SDO_ELMO0+iDevice,
+//																													DESSMID_SDO_ELMO0+iDevice)));
+//
+//
+//				/* add 6 driving motors */
+//				int iDevicesDriving[] = {0,2,4};
+//				for (int i=0; i < 3; i++) {
+//
+//					int iDevice = iDevicesDriving[i];
+//					busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMODrivingMotor(NODEID_ELMO0+iDevice, new Maxon_RE40_Enc500(
+//																																DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
+//																																0,
+//																																0,
+//																																0,
+//																																MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+iDevice,
+//																																MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+iDevice,
+//																																MEASSMID_SDO_ELMO0+iDevice,
+//																																DESSMID_SDO_ELMO0+iDevice)));
+//
+//				}
+//
+//
+//				/* add 2 steering motors */
+//				int iDevicesSteering[] = {6,8};
+//				for (int i=0; i < 2; i++) {
+//					int iDevice = iDevicesSteering[i];
+//					busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOSteeringMotor(NODEID_ELMO0+iDevice, new Maxon_REmax24_Enc512(
+//																																DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
+//																																0,
+//																																0,
+//																																0,
+//																																MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+iDevice,
+//																																MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+iDevice,
+//																																MEASSMID_SDO_ELMO0+iDevice,
+//																																DESSMID_SDO_ELMO0+iDevice)));
+//
+//				}
+
 
 		/* add 6 driving motors */
 		for (int iDevice=0; iDevice < 6; iDevice++) {
-			busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMODrivingMotor(NODEID_ELMO0, new Maxon_RE40_Enc500(
+			busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMODrivingMotor(NODEID_ELMO0+iDevice, new Maxon_RE40_Enc500(
 																														DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
 																														0,
 																														0,
@@ -117,12 +208,14 @@ int main(int argc, char** argv)
 																														MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+iDevice,
 																														MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+iDevice,
 																														MEASSMID_SDO_ELMO0+iDevice,
-																														DESSMID_SDO_ELMO0+iDevice)));
+																														DESSMID_SDO_ELMO0+iDevice,
+																														analogConversion[iDevice][0],
+																														analogConversion[iDevice][1])));
 
 		}
 		/* add 4 steering motors */
 		for (int iDevice=6; iDevice < 10; iDevice++) {
-			busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOSteeringMotor(NODEID_ELMO0, new Maxon_REmax24_Enc500(
+			busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOSteeringMotor(NODEID_ELMO0+iDevice, new Maxon_REmax24_Enc512(
 																														DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
 																														0,
 																														0,
@@ -130,7 +223,9 @@ int main(int argc, char** argv)
 																														MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+iDevice,
 																														MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+iDevice,
 																														MEASSMID_SDO_ELMO0+iDevice,
-																														DESSMID_SDO_ELMO0+iDevice)));
+																														DESSMID_SDO_ELMO0+iDevice,
+																														analogConversion[iDevice][0],
+																														analogConversion[iDevice][1])));
 
 		}
 
@@ -141,6 +236,7 @@ int main(int argc, char** argv)
 		for (int iMsg=0; iMsg<nDesMsg; iMsg++) {
 			initCANBusDataDes(&canDataDes[iBus][iMsg]);
 		}
+
 	}
 
 
@@ -265,59 +361,62 @@ void *bus_routine(void *arg)
 	struct	BusRoutineArguments *busRoutineArgs = (struct BusRoutineArguments*) arg;
 
 
+
+
 	/* **************************
 	 * CAN DRIVER SETUP
 	 ***************************/
 	for (int i=0; i<nBuses; i++) {
 		//! devices are  not unplugged
 		unpluggedBus[i] = false;
-//
-//		/* open channel */
-//		sprintf(channelname, "CHAN0%d", busRoutineArgs[i].iBus);
-//
-//		busRoutineArgs[i].handle  = CPC_OpenChannel((char*)channelname);
-//		printf("Opened channel with handle: %d\n", busRoutineArgs[i].handle);
-//
-//		if(busRoutineArgs[i].handle < 0) {
-//			printf("CPC_OpenChannel of %s failed: %d\n", channelname, busRoutineArgs[i].handle);
-//			exit(-1);
-//		}
-//
-//		/* add message handler */
-//		CPC_AddHandlerEx( busRoutineArgs[i].handle, msg_handler, NULL);
-//
-//
-//		// This sets up the parameters used to initialize the CAN controller
-//		printf("Initializing CAN-Controller ... ");
-//
-//		// Parameters of the can interface
-//		CPC_INIT_PARAMS_T *CPCInitParamsPtr;
-//		CPCInitParamsPtr = CPC_GetInitParamsPtr(busRoutineArgs[i].handle);
-//		CPCInitParamsPtr->canparams.cc_type                      = SJA1000;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.btr0       = BTR0;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.btr1       = BTR1;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.outp_contr = 0xda;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code0  = 0xff;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code1  = 0xff;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code2  = 0xff;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code3  = 0xff;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask0  = 0xff;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask1  = 0xff;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask2  = 0xff;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask3  = 0xff;
-//		CPCInitParamsPtr->canparams.cc_params.sja1000.mode       = 0;
-//
-//		// init the CAN controller
-//		if(CPC_CANInit(busRoutineArgs[i].handle, 0) == 0) {
-//			printf(" done\n");
-//		} else {
-//			printf(" ERROR (exit)\n");
-//			exit (1);
-//		}
-//
-//		// switch on transmission of CAN messages from CPC to PC
-//		printf("Switching ON transimssion of CAN messages from CPC to PC\n");
-//		CPC_Control(busRoutineArgs[i].handle, CONTR_CAN_Message | CONTR_CONT_ON);
+		noTransmitCounter[i] = 0;
+
+		/* open channel */
+		sprintf(channelname, "CHAN0%d", busRoutineArgs[i].iBus);
+
+		busRoutineArgs[i].handle  = CPC_OpenChannel((char*)channelname);
+		printf("Opened channel with handle: %d\n", busRoutineArgs[i].handle);
+
+		if(busRoutineArgs[i].handle < 0) {
+			printf("CPC_OpenChannel of %s failed: %d\n", channelname, busRoutineArgs[i].handle);
+			exit(-1);
+		}
+
+		/* add message handler */
+		CPC_AddHandlerEx( busRoutineArgs[i].handle, msg_handler, NULL);
+
+
+		// This sets up the parameters used to initialize the CAN controller
+		printf("Initializing CAN-Controller ... ");
+
+		// Parameters of the can interface
+		CPC_INIT_PARAMS_T *CPCInitParamsPtr;
+		CPCInitParamsPtr = CPC_GetInitParamsPtr(busRoutineArgs[i].handle);
+		CPCInitParamsPtr->canparams.cc_type                      = SJA1000;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.btr0       = BTR0;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.btr1       = BTR1;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.outp_contr = 0xda;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code0  = 0xff;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code1  = 0xff;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code2  = 0xff;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_code3  = 0xff;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask0  = 0xff;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask1  = 0xff;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask2  = 0xff;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.acc_mask3  = 0xff;
+		CPCInitParamsPtr->canparams.cc_params.sja1000.mode       = 0;
+
+		// init the CAN controller
+		if(CPC_CANInit(busRoutineArgs[i].handle, 0) == 0) {
+			printf(" done\n");
+		} else {
+			printf(" ERROR (exit)\n");
+			exit (1);
+		}
+
+		// switch on transmission of CAN messages from CPC to PC
+		printf("Switching ON transimssion of CAN messages from CPC to PC\n");
+		CPC_Control(busRoutineArgs[i].handle, CONTR_CAN_Message | CONTR_CONT_ON);
 	}
 
 	// initialize time
@@ -348,28 +447,28 @@ void *bus_routine(void *arg)
 		}
 
 
-//		/*******************************************************
-//		 * READ INCOMING CAN MESSAGES
-//		 *******************************************************/
-//		for (int iBus=0; iBus<nBuses; iBus++) {
-//			// timeout is in milliseconds
-//		//	if (CPC_WaitForEvent(handle, 1, EVENT_READ) & EVENT_READ) {
-//					do {
-//						pMsg = CPC_Handle(busRoutineArgs[iBus].handle);
-//
-//						if (pMsg) {
-//							if (pMsg->type == CPC_MSG_T_DISCONNECTED) {
-//								printf("Device unplugged!\n");
-//								unpluggedBus[iBus] = true;
-//								emergency_stop();
-//								break;
-//							}
-//						}
-//					} while (pMsg);
-//		//	} else {
-//		//		printf("CPC read timeout!\n");
-//		//	}
-//		}
+		/*******************************************************
+		 * READ INCOMING CAN MESSAGES
+		 *******************************************************/
+		for (int iBus=0; iBus<nBuses; iBus++) {
+			// timeout is in milliseconds
+		//	if (CPC_WaitForEvent(handle, 1, EVENT_READ) & EVENT_READ) {
+					do {
+						pMsg = CPC_Handle(busRoutineArgs[iBus].handle);
+
+						if (pMsg) {
+							if (pMsg->type == CPC_MSG_T_DISCONNECTED) {
+								printf("Device unplugged!\n");
+								unpluggedBus[iBus] = true;
+								emergency_stop();
+								break;
+							}
+						}
+					} while (pMsg);
+		//	} else {
+		//		printf("CPC read timeout!\n");
+		//	}
+		}
 
 
 		/*******************************************************
@@ -392,31 +491,32 @@ void *bus_routine(void *arg)
 					}
 
 
-//
-//					/*******************************************************
-//					 * SEND CAN MESSAGE
-//					*******************************************************/
-//					int ret;
-//
-//	//				if (CPC_WaitForEvent(busRoutineArgs[i].handle, 1, EVENT_WRITE) & EVENT_WRITE) {
-//						ret =  CPC_SendMsg(busRoutineArgs[iBus].handle, 0, &cmsg);
-//						if (ret < 0) {
-//							/* an error happened */
-//							if (ret == CPC_ERR_CAN_NO_TRANSMIT_BUF) {
-//								noTransmitCounter[iBus]++;
-//								if (noTransmitCounter[iBus] > maxNoTransmitCounter) {
-//									unpluggedBus[iBus] = true;
-//									emergency_stop();
-//								}
-//							}
-//							printf("ERROR Bus%d: %s\n", busRoutineArgs[iBus].iBus,
-//									CPC_DecodeErrorMsg(ret));
-//						}
-//	//				} else {
-//	//					printf("ERROR: Transmit Timeout!\n");
-//	//					ret = -1;
-//	//				}
-//
+
+					/*******************************************************
+					 * SEND CAN MESSAGE
+					*******************************************************/
+					int ret;
+
+	//				if (CPC_WaitForEvent(busRoutineArgs[i].handle, 1, EVENT_WRITE) & EVENT_WRITE) {
+						ret =  CPC_SendMsg(busRoutineArgs[iBus].handle, 0, &cmsg);
+						if (ret < 0) {
+							/* an error happened */
+							if (ret == CPC_ERR_CAN_NO_TRANSMIT_BUF) {
+								noTransmitCounter[iBus]++;
+								if (noTransmitCounter[iBus] > maxNoTransmitCounter) {
+									unpluggedBus[iBus] = true;
+									emergency_stop();
+									noTransmitCounter[iBus] = 0;
+								}
+							}
+							printf("ERROR Bus%d: %s\n", busRoutineArgs[iBus].iBus,
+									CPC_DecodeErrorMsg(ret));
+						}
+	//				} else {
+	//					printf("ERROR: Transmit Timeout!\n");
+	//					ret = -1;
+	//				}
+
 					usleep(120);
 
 
@@ -502,11 +602,11 @@ void catch_signal(int sig)
 		ros::shutdown();
 
 
-//		// close CAN channels
-//		for (int i=0; i<nBuses; i++) {
-//			CPC_RemoveHandlerEx(busRoutineArgs[i].handle, msg_handler);
-//			CPC_CloseChannel(busRoutineArgs[i].handle);
-//		}
+		// close CAN channels
+		for (int i=0; i<nBuses; i++) {
+			CPC_RemoveHandlerEx(busRoutineArgs[i].handle, msg_handler);
+			CPC_CloseChannel(busRoutineArgs[i].handle);
+		}
 
 		stateMachine.terminate();
 
@@ -520,3 +620,156 @@ void emergency_stop(void)
 	stateMachine.process_event(EvEmergencyStop());
 
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+void msg_handler(int handle, const CPC_MSG_T * cpcmsg, void *customPointer)
+{
+	CAN_BusDataMeas canDataMeas;
+	const int iBus = handle;
+
+//	printf("Received a Message!\n");
+
+	canDataMeas.flag = 1;
+	canDataMeas.COBId = cpcmsg->msg.canmsg.id;
+	canDataMeas.length = cpcmsg->msg.canmsg.length;
+	for (int k=0; k<8;k++) {
+		canDataMeas.value[k] = cpcmsg->msg.canmsg.msg[k];
+	}
+
+	int msgIdx = getMsgIdxFromCOBId(iBus, canDataMeas.COBId);
+	if (msgIdx != -1) {
+		process_bus_meas(&canDataMeas, iBus, msgIdx);
+	} else {
+		/* check for errors sent by EPOS */
+		if (canDataMeas.COBId > 0x80 && canDataMeas.COBId < 0x100) {
+			if ((canDataMeas.value[0] == 0x00) && (canDataMeas.value[1] == 0x00)) {
+
+				/* no error */
+				;
+			} else if ((canDataMeas.value[0] == 0x00) && (canDataMeas.value[1] == 0x63)) {
+				//stateMachine.process_event(EvEmergencyStop());
+			} else if ((canDataMeas.value[0] == 0x41) && (canDataMeas.value[1] == 0x54)&& (canDataMeas.value[2] == 0x21)) {
+				/* limit switch error */
+				//stateMachine.process_event(EvEmergencyStop());
+			} else {
+				/* error */
+				emergency_stop();
+				printf("\e[0;31m(COB_ID: 0x%02X / code: 0x%02X%02X)\n", canDataMeas.COBId, canDataMeas.value[1], canDataMeas.value[0]);
+				printf("==============>\n");
+				printf("ERROR - emergency object found\n");
+				decodeEmergencyObject(canDataMeas.value);
+				printf("0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X\n",
+						canDataMeas.value[0],
+						canDataMeas.value[1],
+					    canDataMeas.value[2],
+					    canDataMeas.value[3],
+					    canDataMeas.value[4],
+					    canDataMeas.value[5],
+					    canDataMeas.value[6],
+					    canDataMeas.value[7]);
+				printf("<==============\n\n\e[0m");
+
+			}
+		}
+//		printf("Warning: Received CAN message that is not handled!\n");
+//		printf("\e[0;31m(COB_ID: 0x%02X / code: 0x%02X%02X)\n", canDataMeas.COBId, canDataMeas.value[1], canDataMeas.value[0]);
+//		printf("==============>\n");
+//		printf("0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X\n",
+//				canDataMeas.value[0],
+//				canDataMeas.value[1],
+//			    canDataMeas.value[2],
+//			    canDataMeas.value[3],
+//			    canDataMeas.value[4],
+//			    canDataMeas.value[5],
+//			    canDataMeas.value[6],
+//			    canDataMeas.value[7]);
+//		printf("<==============\n\n\e[0m");
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+int getMsgIdxFromCOBId(int iBus, int COBId)
+{
+//	const int TxPDO1Id = 0x180;
+//	const int TxPDO2Id = 0x280;
+	const int TxPDO3Id = 0x380;
+	const int TxPDO4Id = 0x480;
+
+	const int SDOId = 0x580;
+	const int NMTEnteredPreOperational = 0x700;
+
+
+	for (int i=0; i<nMeasMsg; i++)  {
+		if (COBId == TxPDO3Id+NODEID_ELMO0+i)
+			return MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY+i;
+		if (COBId == TxPDO4Id+NODEID_ELMO0+i)
+			return MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT+i;
+		if (COBId == SDOId+NODEID_ELMO0+i)
+			return MEASSMID_SDO_ELMO0+i;
+		if (COBId == NMTEnteredPreOperational+NODEID_ELMO0+i)
+			return MEASSMID_SDO_ELMO0+i;
+	}
+	return -1;
+
+//	switch (COBId) {
+//	// Motor TxPDO
+//
+//	case TxPDO3Id+NODEID_ELMO0:
+//		return MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY;
+//	case TxPDO4Id+NODEID_ELMO0:
+//		return MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT;
+//	// Motor  SDO
+//	case SDOId+NODEID_ELMO0:
+//	case NMTEnteredPreOperational+NODEID_ELMO0:
+//		return MEASSMID_SDO_ELMO0;
+//	default:
+//		/* not handled CAN message */
+//		return -1;
+//		break;
+//	}
+//	return 0;
+}
+
+
+bool decodeEmergencyObject(unsigned char* DATA)
+{
+
+	if ((DATA[0] == 0x00) && (DATA[1] == 0x00)) {
+		printf("No error\n");
+		return false;
+	} else if ((DATA[0] == 0x00) && (DATA[1] == 0x10)) {
+		printf("generic error\n");
+	} else if ((DATA[0]==0x10)&&(DATA[1]==0x23)) {
+		printf("over current error\n");
+	} else if ((DATA[0]==0x20)&&(DATA[1]==0x32)) {
+		printf("under voltage error\n");
+	} else if ((DATA[0]==0x10)&&(DATA[1]==0x42)) {
+		printf("over temperature error\n");
+	} else if ((DATA[0]==0x13)&&(DATA[1]==0x51)) {
+		printf("supply voltage too low error\n");
+	} else if ((DATA[0]==0x00)&&(DATA[1]==0x61)) {
+		printf("internal software error\n");
+	} else if ((DATA[0]==0x00)&&(DATA[1]==0x61)) {
+		printf("internal software error\n");
+	} else if ((DATA[0]==0x11)&&(DATA[1]==0x86)) {
+		printf("Following error\n");
+	} else if ((DATA[0]==0x09)&&(DATA[1]==0xFF)) {
+		printf("Software position limit error\n"); // 0Xff09
+	} else if ((DATA[0]==0x08)&&(DATA[1]==0xFF)) {
+		printf("Hall Angle detection error\n");
+	} else if ((DATA[0]==0x01)&&(DATA[1]==0xFF)) {
+		printf("Hall Sensor error\n");
+	} else if ((DATA[0]==0x0B)&&(DATA[1]==0xFF)) {
+		printf("System overloaded\n");
+	} else if ((DATA[0]==0x30)&&(DATA[1]==0x81)) {
+			printf("CAN Life guard error\n");
+	} else if ((DATA[0]==0x54)&&(DATA[1]==0x21)) {
+		printf("Disabled by limit switch\n");
+	} else {
+		printf("Error not specified\n");
+	}
+	return true;
+}
+

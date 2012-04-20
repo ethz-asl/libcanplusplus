@@ -38,7 +38,7 @@ void DeviceELMOSteeringMotor::addRxPDOs()
 void DeviceELMOSteeringMotor::setProfilePosition(double jointPosition_rad)
 {
 
-	int jointPosition_ticks = jointPosition_rad * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS;
+	int jointPosition_ticks = (jointPosition_rad - deviceParams_->homeOffsetJointPosition_rad) * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS;
 	rxPDOPosition_->setPosition(jointPosition_ticks);
 	//jointPosition_ticks = 500000;
 //	Working with elmo
@@ -68,9 +68,11 @@ bool DeviceELMOSteeringMotor::initDevice()
 //	SDOManager->addSDO(new SDONMTResetCommunication(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 //	SDOManager->addSDO(new SDONMTResetNode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 
+
 	printf("NMT: Enter Pre-Operational\n");
 	SDOManager->addSDO(new SDONMTEnterPreOperational(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSetCOBIDSYNC(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x80));
+
 
 
 	/* configure the PDOs on the motor controller */
@@ -80,6 +82,7 @@ bool DeviceELMOSteeringMotor::initDevice()
 	/* configure several motor parameters */
 	setMotorParameters();
 	initMotor();
+
 
 	printf("NMT: Start remote node\n");
 	SDOManager->addSDO(new SDONMTStartRemoteNode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
@@ -117,14 +120,45 @@ void DeviceELMOSteeringMotor::configRxPDOProfilePosition()
 	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	///< Step 4: Mapping Objects
 
+	///< Mapping "Operation Mode"
+	SDOManager->addSDO(new SDORxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60600008));
+
 	///< Mapping "Target position"
-	SDOManager->addSDO(new SDORxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x607A0020));
+	SDOManager->addSDO(new SDORxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x607A0020));
 	///< Mapping "Controlword"
-	SDOManager->addSDO(new SDORxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60400010));
+	SDOManager->addSDO(new SDORxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x60400010));
 
 
 	///< Step 5: Number of Mapped Application Objects
-	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
+	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
+}
+
+void DeviceELMOSteeringMotor::setEnableMotor()
+{
+	rxPDOPosition_->enable();
+}
+
+void DeviceELMOSteeringMotor::setDisableMotor()
+{
+	rxPDOPosition_->disable();
+}
+
+void DeviceELMOSteeringMotor::initMotor()
+{
+	SDOManager* SDOManager = bus_->getSDOManager();
+	SDOManager->addSDO(new SDOFaultReset(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	SDOManager->addSDO(new SDOShutdown(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	SDOManager->addSDO(new SDOSwitchOn(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	//SDOManager->addSDO(new SDOEnableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 }
 
 
+
+
+void DeviceELMOSteeringMotor::setHomeOffset(double jointPosition_rad)
+{
+	double motorPositionOffset_counts = jointPosition_rad * (deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS);
+	SDOManager* SDOManager = bus_->getSDOManager();
+	SDOManager->addSDO(new SDOSetHomeOffset(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, motorPositionOffset_counts));
+
+}

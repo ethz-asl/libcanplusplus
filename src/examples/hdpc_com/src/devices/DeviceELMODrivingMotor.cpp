@@ -45,7 +45,6 @@ void DeviceELMODrivingMotor::setMotorParameters()
 
 	SDOManager* SDOManager = bus_->getSDOManager();
 
-	setPositionLimits(deviceParams_->positionLimits);
 
 	SDOManager->addSDO(new SDOSetOperationMode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, deviceParams_->operationMode));
 	SDOManager->addSDO(new SDOSetDS402ConfigurationObject(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02)); //0x02
@@ -118,3 +117,13 @@ void DeviceELMODrivingMotor::configRxPDOProfileVelocity()
 	SDOManager->addSDO(new SDORxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
 }
 
+
+void DeviceELMODrivingMotor::setEnableMotor()
+{
+	rxPDOVelocity_->enable();
+}
+
+void DeviceELMODrivingMotor::setDisableMotor()
+{
+	rxPDOVelocity_->disable();
+}

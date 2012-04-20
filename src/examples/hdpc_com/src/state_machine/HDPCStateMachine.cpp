@@ -13,7 +13,7 @@
 #include "DeviceELMODrivingMotor.hpp"
 #include "DeviceELMOSteeringMotor.hpp"
 
-HDPCStateMachine::HDPCStateMachine(BusManager* busManager):busManager_(busManager),isInStFault_(false)
+HDPCStateMachine::HDPCStateMachine(BusManager* busManager):busManager_(busManager),isInStFault_(false),isStarting_(false)
 {
 	//DeviceManager* devices = busManager_->getBus(0)->getDeviceManager();
 	for (int iDevice=0; iDevice < commands_.command.size(); iDevice++) {
@@ -67,6 +67,12 @@ bool HDPCStateMachine::srvChangeState(hdpc_com::ChangeStateMachine::Request  &re
 	ROS_INFO("event: %d", req.event);
 	ROS_INFO("state: %d", actualState_);
 
+	DeviceManager* devices = busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->printStatusword();
+	}
+
 	return true;
 }
 
@@ -83,10 +89,26 @@ void HDPCStateMachine::publishReadings()
 		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
 		readings_.position[iDevice] = motor->getPosition();
 		readings_.velocity[iDevice] = motor->getVelocity();
-		readings_.analog[iDevice] = motor->getAnalog();
+		//readings_.analog[iDevice] = motor->getAnalog();
+		readings_.analog[iDevice] = motor->getAbsJointPosition();
 		readings_.current[iDevice] = motor->getCurrent();
+		//motor->printStatusword();
 	}
 
 	/* publish readings */
 	ros_pub_.publish(readings_);
+}
+
+void HDPCStateMachine::checkStatus()
+{
+	DeviceManager* devices = busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		if (motor->getStatus()->isFault()) {
+			process_event(EvEmergencyStop());
+		}
+		if (motor->getStatus()->isDisabled()) {
+			process_event(EvStopping());
+		}
+	}
 }

@@ -63,6 +63,14 @@ public:
 	 */
 	virtual void setProfileVelocity(double velocity);
 
+
+	//! Enable the EPOS
+	virtual void setEnableMotor();
+
+	//! Disable the EPOS
+	virtual void setDisableMotor();
+
+
 protected:
 	//! PDO message to send motor velocity command
 	RxPDOVelocity* rxPDOVelocity_;

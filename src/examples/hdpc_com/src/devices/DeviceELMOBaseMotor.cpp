@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <ros/ros.h>
+
 
 DeviceELMOBaseMotor::DeviceELMOBaseMotor(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams)
 :Device(nodeId),deviceParams_(deviceParams)
@@ -54,7 +56,7 @@ void DeviceELMOBaseMotor::addTxPDOs()
 
 double DeviceELMOBaseMotor::getPosition()
 {
-	return ((double) txPDOPositionVelocity_->getPosition()) / ( deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS);
+	return ((double) txPDOPositionVelocity_->getPosition()) / ( deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS) + deviceParams_->homeOffsetJointPosition_rad;
 
 }
 
@@ -66,15 +68,19 @@ double DeviceELMOBaseMotor::getVelocity()
 
 double DeviceELMOBaseMotor::getCurrent()
 {
-	return ((double) txPDOAnalogCurrent_->getCurrent());
+	return ((double) txPDOAnalogCurrent_->getCurrent()) * deviceParams_->continuous_current_limit / 1000.0;;
 }
 
 
 double DeviceELMOBaseMotor::getAnalog()
 {
-	return ((double) txPDOAnalogCurrent_->getAnalog());
+	return ((double) txPDOAnalogCurrent_->getAnalog())*0.00067139;
 }
 
+double DeviceELMOBaseMotor::getAbsJointPosition()
+{
+	return deviceParams_->analog_voltage_to_rad_slope * (getAnalog()) + deviceParams_->analog_voltage_to_rad_offset;
+}
 
 void DeviceELMOBaseMotor::setPositionLimits(double * positionLimit_rad)
 {
@@ -90,8 +96,8 @@ void DeviceELMOBaseMotor::setPositionLimits(double * positionLimit_rad)
 		maxPositionLimit = positionLimit_rad[0];
 	}
 
-	int minLimit_ticks =  (int) (minPositionLimit * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS);
-	int maxLimit_ticks =  (int) (maxPositionLimit * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS);
+	int minLimit_ticks =  (int) ((minPositionLimit - deviceParams_->homeOffsetJointPosition_rad) * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS);
+	int maxLimit_ticks =  (int) ((maxPositionLimit - deviceParams_->homeOffsetJointPosition_rad) * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS);
 
 	bus_->getSDOManager()->addSDO(new SDOSetMinPositionLimit(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, minLimit_ticks));
 	bus_->getSDOManager()->addSDO(new SDOSetMaxPositionLimit(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, maxLimit_ticks));
@@ -170,8 +176,11 @@ void DeviceELMOBaseMotor::configTxPDOAnalogCurrent()
 	///< Mapping "actual current value - works!"
 	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60780010));
 
+	///< Mapping "status word"
+	SDOManager->addSDO(new SDOTxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x60410010));
+
 	///< Number of Mapped Application Objects
-	SDOManager->addSDO(new SDOTxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
+	SDOManager->addSDO(new SDOTxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
 
 }
 
@@ -182,7 +191,7 @@ void DeviceELMOBaseMotor::initMotor()
 	SDOManager->addSDO(new SDOFaultReset(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOShutdown(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSwitchOn(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
-	SDOManager->addSDO(new SDOEnableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	//SDOManager->addSDO(new SDOEnableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 }
 
 
@@ -248,5 +257,59 @@ bool DeviceELMOBaseMotor::getIsMotorDisabled(bool &flag)
 
 	return false;
 
+}
+
+void DeviceELMOBaseMotor::startRemoteNode()
+{
+	SDOManager* SDOManager = bus_->getSDOManager();
+	printf("NMT: Start remote node\n");
+	SDOManager->addSDO(new SDONMTStartRemoteNode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+
+}
+
+TxPDOAnalogCurrent* DeviceELMOBaseMotor::getStatus()
+{
+	return txPDOAnalogCurrent_;
+}
+
+int DeviceELMOBaseMotor::printStatusword()
+{
+	int statusword = txPDOAnalogCurrent_->getStatusword();
+
+
+	if(statusword & (1<<STATUSWORD_OPERATION_ENABLE_BIT))
+		ROS_INFO("Is enabled");
+
+	if(!(statusword & (1<<STATUSWORD_OPERATION_ENABLE_BIT)))
+		ROS_INFO("Is disabled");
+
+
+	if(statusword & (1<<STATUSWORD_SWITCHED_ON_BIT))
+		ROS_INFO("Is switched on");
+
+
+	if(statusword & (1<<STATUSWORD_VOLTAGE_ENABLE_BIT))
+		ROS_INFO("Is voltage enabled");
+
+	if(statusword & (1<<STATUSWORD_FAULT_BIT))
+		ROS_INFO("Is fault");
+
+	if(statusword & (1<<STATUSWORD_INTERNAL_LIMIT_ACTIVE_BIT))
+		ROS_INFO("Is internal limit active");
+
+	if(statusword & (1<<STATUSWORD_SWITCH_ON_DISABLE_BIT))
+		ROS_INFO("Is switch on disable");
+
+	if(statusword & (1<<STATUSWORD_QUICK_STOP_BIT))
+		ROS_INFO("Is quick stop");
+
+
+	return statusword;
+
+}
+
+void DeviceELMOBaseMotor::setHomeOffsetJointPosition(double homeOffsetJointPosition_rad)
+{
+	deviceParams_->homeOffsetJointPosition_rad = homeOffsetJointPosition_rad;
 }
 

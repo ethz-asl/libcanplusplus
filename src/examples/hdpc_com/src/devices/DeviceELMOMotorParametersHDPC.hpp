@@ -42,6 +42,7 @@ typedef int 			EPOS_INT32;
 //To convert from SI to EPOS units
 #define RPM_TO_RAD_S 2.0*M_PI/60.0
 #define RAD_S_TO_RPM 60/(2.0*M_PI)
+#define DEG_TO_RAD M_PI/180.0
 
 
 //! Motor parameters for a motor controlled by a Maxon EPOS2
@@ -81,7 +82,7 @@ public:
 	//! maximal following error [rad] (maximal allowed difference of position actual value to position demand value)
 	double max_following_error;
 
-	//! profile velocity in profile position mode [rpm]
+	//! profile velocity in profile position mode [counts/s]
 	int profileVelocityInPPMode;
 
 
@@ -92,6 +93,8 @@ public:
 
 	// ELMO
 	double rad_s_Gear_to_counts_s_Motor;
+
+	double homeOffsetJointPosition_rad;
 
 	//Gains
 	//Dangerous: In Maxon units (for convenience)
@@ -118,6 +121,12 @@ public:
 
 	//! position limits [rad]
 	double positionLimits[2];
+
+	//! abs_joint_angle = analog_voltage_to_rad_slope * analog + analog_voltage_to_rad_offset
+	double analog_voltage_to_rad_slope;
+
+	//! abs_joint_angle = analog_voltage_to_rad_slope * analog + analog_voltage_to_rad_offset
+	double analog_voltage_to_rad_offset;
 
 	//! operation (control) mode (velocity, position, current, etc. Use defines above)
 	int operationMode;
@@ -167,7 +176,10 @@ public:
 	 txPDO3SMId_(txPDO3SMId),
 	 txPDO4SMId_(txPDO4SMId),
 	 inSDOSMId_(inSDOSMId),
-	 outSDOSMId_(outSDOSMId)
+	 outSDOSMId_(outSDOSMId),
+	 homeOffsetJointPosition_rad(0),
+	 analog_voltage_to_rad_slope(0),
+	 analog_voltage_to_rad_offset(0)
 	{
 
 	}

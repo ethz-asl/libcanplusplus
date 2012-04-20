@@ -26,7 +26,9 @@ struct Maxon_RE40_Enc500 : DeviceELMOMotorParametersHDPC {
 	  int txPDO3SMId,
 	  int txPDO4SMId,
 	  int inSDOSMId,
-	  int outSDOSMId):
+	  int outSDOSMId,
+	  double analogConversion_slope,
+	  double analogConversion_offset):
 		  DeviceELMOMotorParametersHDPC(rxPDO1SMId,
 								  rxPDO2SMId,
 								  txPDO1SMId,
@@ -65,8 +67,6 @@ struct Maxon_RE40_Enc500 : DeviceELMOMotorParametersHDPC {
 		 current_P_Gain  = 688;
 		 current_I_Gain  = 123;
 
-		positionLimits[0] = 0;
-		positionLimits[1] = M_PI;
 
 		continuous_current_limit = 4.7;	//[A]
 		output_current_limit	  = 9.4;//[A]
@@ -81,19 +81,22 @@ struct Maxon_RE40_Enc500 : DeviceELMOMotorParametersHDPC {
 		rad_s_Gear_to_rpm_Motor =  gearratio_motor * RAD_S_TO_RPM;		// ok
 		rad_s_Gear_to_counts_s_Motor = gearratio_motor * RAD_TO_TICKS;  // ok
 
-
+		analog_voltage_to_rad_slope = analogConversion_slope * DEG_TO_RAD;
+		analog_voltage_to_rad_offset = analogConversion_offset * DEG_TO_RAD;
 	}
 };
 
-struct Maxon_REmax24_Enc500 : DeviceELMOMotorParametersHDPC {
-	Maxon_REmax24_Enc500(int rxPDO1SMId,
+struct Maxon_REmax24_Enc512 : DeviceELMOMotorParametersHDPC {
+	Maxon_REmax24_Enc512(int rxPDO1SMId,
 	  int rxPDO2SMId,
 	  int txPDO1SMId,
 	  int txPDO2SMId,
 	  int txPDO3SMId,
 	  int txPDO4SMId,
 	  int inSDOSMId,
-	  int outSDOSMId):
+	  int outSDOSMId,
+	  double analogConversion_slope,
+	  double analogConversion_offset):
 		  DeviceELMOMotorParametersHDPC(  rxPDO1SMId,
 								  rxPDO2SMId,
 								  txPDO1SMId,
@@ -131,12 +134,12 @@ struct Maxon_REmax24_Enc500 : DeviceELMOMotorParametersHDPC {
 		 current_I_Gain  = 123;
 
 		positionLimits[0] = -M_PI/2;
-		positionLimits[1] = 0.2; //M_PI/2;
+		positionLimits[1] = M_PI/2; //M_PI/2;
 
 		continuous_current_limit = 0.516;	//[A] ok
 		output_current_limit	  = 1.1;//[A]
 
-		profileVelocityInPPMode = 40000;  // [rpm] ok
+		profileVelocityInPPMode = 160000;  // [counts/] ok
 
 		max_profile_velocity =    M_PI/2.0;		//[rad/s] of Gear output
 		profile_acceleration	= 32*M_PI;			//[rad/s2]
@@ -148,6 +151,8 @@ struct Maxon_REmax24_Enc500 : DeviceELMOMotorParametersHDPC {
 		rad_s_Gear_to_rpm_Motor =  gearratio_motor * RAD_S_TO_RPM;  	// ok
 		rad_s_Gear_to_counts_s_Motor = gearratio_motor * RAD_TO_TICKS;  // ok
 
+		analog_voltage_to_rad_slope = analogConversion_slope * DEG_TO_RAD;
+		analog_voltage_to_rad_offset = analogConversion_offset * DEG_TO_RAD;
 	}
 };
 

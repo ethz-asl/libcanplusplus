@@ -29,6 +29,8 @@ class Device;
 class DeviceELMOBaseMotor: public Device {
 public:
 
+	double absHomingPosition_;
+
 	/*! Constructor
 	 * @param nodeId	CAN node ID
 	 * @param deviceParams	parameter struct
@@ -97,6 +99,9 @@ public:
 	 */
 	double getAnalog();
 
+	/*! absolute joint position from analog signals [rad] */
+	double getAbsJointPosition();
+
 	/*! Gets the reference to the device parameters
 	 * @return reference to the device parameters
 	 */
@@ -123,12 +128,19 @@ public:
 	 */
 	virtual void setPositionLimits(double* positionLimit_rad);
 
-	//! Enable the EPOS
+	//! Enable the EPOS using a SDO
 	virtual void setEnableMotor();
 
-	//! Disable the EPOS
+	//! Disable the EPOS using a SDO
 	virtual void setDisableMotor();
 
+	virtual void startRemoteNode();
+
+	virtual int printStatusword();
+
+	TxPDOAnalogCurrent* getStatus();
+
+	void setHomeOffsetJointPosition(double homeOffsetJointPosition_rad);
 
 protected:
 	//! PDO message to measure position and velocity of the motor

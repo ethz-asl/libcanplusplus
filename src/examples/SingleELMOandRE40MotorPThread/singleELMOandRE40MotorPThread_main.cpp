@@ -81,7 +81,7 @@ enum MEASSMID {
 
 //! CAN Node ID given by the DIP switches
 enum CANNODEID {
-	NODEID_MOTOR=8,
+	NODEID_MOTOR=3,
 };
 
 

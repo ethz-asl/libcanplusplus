@@ -21,6 +21,9 @@
 class DeviceELMOSteeringMotor: public DeviceELMOBaseMotor {
 public:
 
+	//! Used for homing procedure
+	double absCurrentJointPosition_;
+
 	/*! Constructor
 	 * @param nodeId	CAN node ID
 	 * @param deviceParams	parameter struct
@@ -58,6 +61,18 @@ public:
 	 */
 	void setProfilePosition(double jointPosition_rad);
 
+	//! Enable the EPOS
+	virtual void setEnableMotor();
+
+	//! Disable the EPOS
+	virtual void setDisableMotor();
+
+
+	virtual void initMotor();
+
+
+
+	void setHomeOffset(double jointPosition_rad);
 
 protected:
 	//! PDO message to send motor position command

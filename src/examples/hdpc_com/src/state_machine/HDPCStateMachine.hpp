@@ -40,6 +40,9 @@ struct EvTerminateSM : sc::event< EvTerminateSM > {};
 //! emergency stop -> goes to state enabled
 struct EvEmergencyStop : sc::event< EvEmergencyStop > {};
 
+
+
+
 //! executes state
 struct EvExecute : sc::event< EvExecute > {};
 
@@ -67,15 +70,14 @@ public:
 		SM_STOP,
 		SM_STARTING,
 		SM_DRIVE,
-		SM_RESETING,
 		SM_FAULT
 	};
 
 	//! Events that are allowed to be received by srvChangeState()
 	enum HDPCEVENT {
 		EVENT_READSTATEONLY = 0,
-		EVENT_STOPPING,
 		EVENT_STARTING,
+		EVENT_STOPPING,
 		EVENT_RESETING
 	};
 
@@ -106,6 +108,10 @@ public:
 
 	//! Read out measurements from CAN message and publish them
 	void publishReadings();
+
+	void checkStatus();
+
+	bool isStarting_;
 private:
 	//! Node handle
 	boost::shared_ptr<ros::NodeHandle> ros_node_;

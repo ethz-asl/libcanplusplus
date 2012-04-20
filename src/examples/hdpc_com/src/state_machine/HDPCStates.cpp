@@ -37,7 +37,7 @@ sc::result StTop::react( const EvEmergencyStop& )
 {
 	outermost_context_type & machine = outermost_context();
 	machine.isInStFault_ = true;
-	return transit<StStopping>();
+	return transit<StFault>();
 }
 
 sc::result StTop::react( const EvTerminateSM& )
@@ -45,16 +45,56 @@ sc::result StTop::react( const EvTerminateSM& )
 	return terminate();
 }
 
+//////////////////////////////////////////////////////////////////////////////
+StDriveTop::StDriveTop( my_context ctx ) :
+  my_base( ctx ), counter_(0)
+{
+	ROS_INFO("Entering StDriveTop");
+	outermost_context_type & machine = outermost_context();
+
+}
+
+StDriveTop::~StDriveTop() {
+	ROS_INFO("Exiting StDriveTop");
+}
+
+sc::result StDriveTop::react( const EvExecute& )
+{
+	outermost_context_type & machine = outermost_context();
+
+	if (counter_ > 50) {
+		DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+		for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+			DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+			if (motor->getStatus()->isFault()) {
+				return transit<StFault>();
+			}
+			if (motor->getStatus()->isDisabled()) {
+				return transit<StStop>();
+			}
+		}
+	} else {
+		counter_++;
+	}
+
+	return forward_event();
+}
 
 //////////////////////////////////////////////////////////////////////////////
 StInit::StInit( my_context ctx ) :
   my_base( ctx ), iDevice_(0), waitForDeviceCount_(10000)
 {
 	ROS_INFO("Entering StInit");
+	outermost_context_type & machine = outermost_context();
+	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(false);
+
 }
 
 StInit::~StInit() {
 	ROS_INFO("Exiting StInit");
+	outermost_context_type & machine = outermost_context();
+	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(true);
+
 }
 
 sc::result StInit::react( const EvExecute& )
@@ -64,30 +104,28 @@ sc::result StInit::react( const EvExecute& )
 	/* The previous device should have some time to initialize
 	 * counts ~= 2x no. of SDOs to init
 	 */
-	if (waitForDeviceCount_++ > 20) {
+	if (waitForDeviceCount_++ > 100) {
 		waitForDeviceCount_ = 0;
 
-		ROS_INFO("Init device %d", iDevice_);
-		/* initialize device */
 		DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
-		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice_);
-		motor->initDevice();
-
-		iDevice_++;
 
 		/* check if all devices are initialized */
 		if (iDevice_ >= devices->getSize()) {
 			return transit<StHoming>();
 		}
+
+		ROS_INFO("Init device %d", iDevice_);
+		/* initialize device */
+
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice_);
+		motor->initDevice();
+
+		iDevice_++;
 	}
 
 	return forward_event();
 }
 
-sc::result StInit::react( const EvEmergencyStop& )
-{
-	return forward_event();
-}
 
 sc::result StInit::react( const EvStateInfo& )
 {
@@ -97,9 +135,17 @@ sc::result StInit::react( const EvStateInfo& )
 }
 //////////////////////////////////////////////////////////////////////////////
 StHoming::StHoming( my_context ctx ) :
-  my_base( ctx )
+  my_base( ctx ),waitCount_(0)
 {
 	ROS_INFO("Entering StHoming");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+
+	for (int iDevice=6; iDevice < 10; iDevice++) {
+		DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
+		motor->absCurrentJointPosition_ = 0.0;
+		motor->setHomeOffsetJointPosition(0.0);
+	}
 }
 
 StHoming::~StHoming() {
@@ -109,33 +155,32 @@ StHoming::~StHoming() {
 sc::result StHoming::react( const EvExecute& )
 {
 	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
 
-	/* The previous device should have some time to initialize
-	 * counts ~= 2x no. of SDOs to init
-	 */
-	if (waitForDeviceCount_++ > 200) {
-		waitForDeviceCount_ = 0;
-
-		/* initialize device */
-		DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
-		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice_);
-
-
-		iDevice_++;
-
-		/* check if all devices are initialized */
-		if (iDevice_ >= devices->getSize()) {
-			return transit<StStop>();
+	const int nSamples = 200;
+	if (waitCount_ < nSamples) {
+		for (int iDevice=6; iDevice < 10; iDevice++) {
+			DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
+			motor->absCurrentJointPosition_ += motor->getAbsJointPosition();
 		}
+	} else if (waitCount_ == nSamples){
+		for (int iDevice=6; iDevice < 10; iDevice++) {
+			DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
+			motor->absCurrentJointPosition_ /= nSamples;
+			ROS_INFO("Device%d: pos=%lf",iDevice,motor->absCurrentJointPosition_);
+			const double homeOffsetJointPosition_rad = motor->absCurrentJointPosition_ - motor->getPosition();
+			motor->setHomeOffsetJointPosition(homeOffsetJointPosition_rad);
+			motor->setPositionLimits(motor->getDeviceParams()->positionLimits);
+		}
+	} else if (waitCount_ > nSamples+10) {
+		return transit<StStop>();
 	}
+	waitCount_++;
+
 
 	return forward_event();
 }
 
-sc::result StHoming::react( const EvEmergencyStop& )
-{
-	return forward_event();
-}
 
 sc::result StHoming::react( const EvStateInfo& )
 {
@@ -144,114 +189,18 @@ sc::result StHoming::react( const EvStateInfo& )
 	return discard_event();
 }
 
-//////////////////////////////////////////////////////////////////////////////
-StStopping::StStopping( my_context ctx ) :
-  my_base( ctx ),sv_disabling_counter_(0), iDevice_(0)
-{
-
-	ROS_INFO("Entering StStopping");
-
-	outermost_context_type & machine = outermost_context();
-
-	const int nDevices = machine.busManager_->getBus(0)->getDeviceManager()->getSize();
-	isDisabling_ = new bool[nDevices];
-	isReallyDisabled_  = new bool[nDevices];
-
-	for(int iDevice=0; iDevice<nDevices; iDevice++) {
-		isDisabling_[iDevice] = false;
-		isReallyDisabled_[iDevice] = false;
-	}
-	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(false);
-}
-
-StStopping::~StStopping() {
-
-	ROS_INFO("Exiting StStopping");
-
-	delete[] isDisabling_;
-	delete[] isReallyDisabled_;
-	outermost_context_type & machine = outermost_context();
-	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(true);
-}
-
-sc::result StStopping::react( const EvExecute& )
-{
-	outermost_context_type & machine = outermost_context();
-	const int nDevices = machine.busManager_->getBus(0)->getDeviceManager()->getSize();
-
-	DeviceELMOBaseMotor* motor = (DeviceELMOBaseMotor*) machine.busManager_->getBus(0)->getDeviceManager()->getDevice(iDevice_);
-	bool isMotorDisabled;
-	if (motor->getIsMotorDisabled(isMotorDisabled)) {
-		/* data is available whether the motor is enabled or not */
-		if (!isMotorDisabled) {
-			/* motor is enabled */
-			if (!isDisabling_[iDevice_]) {
-				/* motor should be enabled */
-				motor->setDisableMotor();
-				isDisabling_[iDevice_] = true;
-			}
-
-		} else {
-			/* motor is disabled */
-			isReallyDisabled_[iDevice_] = true;
-			iDevice_++;
-			sv_disabling_counter_=0;
-		}
-	}
-
-
-
-	sv_disabling_counter_++;
-	if (sv_disabling_counter_>100*2) {
-		sv_disabling_counter_=0;
-		iDevice_++;
-	}
-
-
-	if (iDevice_ >= nDevices) {
-		bool allDevicesAreDisabled = true;
-		for(int iDevice=0; iDevice<nDevices; iDevice++) {
-			if (!isReallyDisabled_[iDevice]) {
-				allDevicesAreDisabled = false;
-				break;
-			}
-		}
-
-		if (allDevicesAreDisabled) {
-			if (machine.isInStFault_) {
-				return transit< StFault >();
-			}
-			return transit< StStop >();
-		} else {
-			for(int iDevice=0; iDevice<nDevices; iDevice++) {
-				if (!isReallyDisabled_[iDevice]) {
-					ROS_INFO("\e[0;31mMotor %d is not disabled!\n\e[0m", iDevice);
-				}
-			}
-			return transit< StFault >();
-		}
-
-	}
-	return  forward_event();
-}
-
-sc::result StStopping::react( const EvEmergencyStop& )
-{
-	return forward_event();
-}
-
-sc::result StStopping::react( const EvStateInfo& )
-{
-	outermost_context().actualState_ = HDPCStateMachine::SM_STOPPING;
-	ROS_INFO("StStopping");
-	return discard_event();
-}
 
 //////////////////////////////////////////////////////////////////////////////
 StStop::StStop( my_context ctx ) :
   my_base( ctx )
 {
 	ROS_INFO("Entering StStop");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->setDisableMotor();
+	}
 }
 
 StStop::~StStop() {
@@ -272,10 +221,6 @@ sc::result StStop::react( const EvExecute& )
 	return discard_event();
 }
 
-sc::result StStop::react( const EvEmergencyStop& )
-{
-	return forward_event();
-}
 
 sc::result StStop::react( const EvStateInfo& )
 {
@@ -284,98 +229,15 @@ sc::result StStop::react( const EvStateInfo& )
 	return discard_event();
 }
 
-
-//////////////////////////////////////////////////////////////////////////////
-StStarting::StStarting( my_context ctx ): my_base( ctx ),
-		sv_enabling_counter_(0),iDevice_(0)
+sc::result StStop::react( const EvStopping& )
 {
-	ROS_INFO("Entering StStarting");
-	outermost_context_type & machine = outermost_context();
-	const int nDevices = machine.busManager_->getBus(0)->getDeviceManager()->getSize();
-	isEnabling_ = new bool[nDevices];
-	isReallyEnabled_  = new bool[nDevices];
-
-	for(int iDevice=0; iDevice<nDevices; iDevice++) {
-		isEnabling_[iDevice] = false;
-		isReallyEnabled_[iDevice] = false;
-	}
-	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(false);
-}
-
-StStarting::~StStarting()
-{
-	ROS_INFO("Exiting StStarting");
-
-	delete[] isEnabling_;
-	delete[] isReallyEnabled_;
-	outermost_context_type & machine = outermost_context();
-	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(true);
-}
-
-sc::result StStarting::react( const EvExecute & )
-{
-
-	outermost_context_type & machine = outermost_context();
-	const int nDevices = machine.busManager_->getBus(0)->getDeviceManager()->getSize();
-
-	DeviceELMOBaseMotor* motor = (DeviceELMOBaseMotor*) machine.busManager_->getBus(0)->getDeviceManager()->getDevice(iDevice_);
-	bool isMotorEnabled;
-	if (motor->getIsMotorEnabled(isMotorEnabled)) {
-		/* data is available whether the motor is enabled or not */
-		if (!isMotorEnabled) {
-			/* motor is not enabled */
-			if (!isEnabling_[iDevice_]) {
-				/* motor should be enabled */
-				motor->setEnableMotor();
-				isEnabling_[iDevice_] = true;
-			}
-		} else {
-			/* motor is enabled */
-			isReallyEnabled_[iDevice_] = true;
-		}
-	}
-
-
-	sv_enabling_counter_++;
-	if (sv_enabling_counter_>100*2) {
-		sv_enabling_counter_=0;
-		iDevice_++;
-	}
-	if (iDevice_ >= nDevices) {
-		bool allDevicesAreEnabled = true;
-		for(int iDevice=0; iDevice<nDevices; iDevice++) {
-			if (!isReallyEnabled_[iDevice]) {
-				allDevicesAreEnabled = false;
-				break;
-			}
-		}
-
-		if (allDevicesAreEnabled) {
-			return transit< StDrive >();
-		} else if (sv_enabling_counter_ > 100*2) {
-			for(int iDevice=0; iDevice<nDevices; iDevice++) {
-				if (!isReallyEnabled_[iDevice]) {
-					ROS_INFO("\e[0;31mMotor %d cannot be enabled!\n\e[0m", iDevice);
-				}
-			}
-			return transit< StFault >();
-		}
-	}
-	return  forward_event();
-
-}
-
-sc::result StStarting::react( const EvEmergencyStop& )
-{
-	return forward_event();
-}
-
-sc::result StStarting::react( const EvStateInfo& )
-{
-	outermost_context().actualState_ = HDPCStateMachine::SM_STARTING;
-	ROS_INFO("StStarting");
 	return discard_event();
 }
+
+
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 StDrive::StDrive( my_context ctx ) :
@@ -393,6 +255,7 @@ sc::result StDrive::react( const EvExecute& )
 	outermost_context_type & machine = outermost_context();
 
 	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+
 
 	/* set commands of driving motors */
 	for (int iDevice=0; iDevice < 6; iDevice++) {
@@ -413,10 +276,6 @@ sc::result StDrive::react( const EvExecute& )
 	return forward_event();
 }
 
-sc::result StDrive::react( const EvEmergencyStop& )
-{
-	return forward_event();
-}
 
 sc::result StDrive::react( const EvStateInfo& )
 {
@@ -431,10 +290,23 @@ StDriveTestDrivingMotor::StDriveTestDrivingMotor( my_context ctx ) :
   my_base( ctx )
 {
 	ROS_INFO("Entering StDriveTestDrivingMotor");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMODrivingMotor* motor =  (DeviceELMODrivingMotor*) devices->getDevice(iDevice);
+		motor->setEnableMotor();
+	}
+	machine.isStarting_ = true;
 }
 
 StDriveTestDrivingMotor::~StDriveTestDrivingMotor() {
 	ROS_INFO("Exiting StDriveTestDrivingMotor");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMODrivingMotor* motor =  (DeviceELMODrivingMotor*) devices->getDevice(iDevice);
+		motor->setDisableMotor();
+	}
 }
 
 sc::result StDriveTestDrivingMotor::react( const EvExecute& )
@@ -444,17 +316,13 @@ sc::result StDriveTestDrivingMotor::react( const EvExecute& )
 	/* initialize all devices */
 	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
 	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
-		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
-
+		DeviceELMODrivingMotor* motor =  (DeviceELMODrivingMotor*) devices->getDevice(iDevice);
+		motor->setProfileVelocity(1.0);
 	}
-
-	return discard_event();
-}
-
-sc::result StDriveTestDrivingMotor::react( const EvEmergencyStop& )
-{
+	machine.isStarting_ = true;
 	return forward_event();
 }
+
 
 sc::result StDriveTestDrivingMotor::react( const EvStateInfo& )
 {
@@ -468,10 +336,22 @@ StDriveTestSteeringMotor::StDriveTestSteeringMotor( my_context ctx ) :
   my_base( ctx )
 {
 	ROS_INFO("Entering StDriveTestSteeringMotor");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
+		motor->setEnableMotor();
+	}
 }
 
 StDriveTestSteeringMotor::~StDriveTestSteeringMotor() {
 	ROS_INFO("Exiting StDriveTestSteeringMotor");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
+		motor->setDisableMotor();
+	}
 }
 
 sc::result StDriveTestSteeringMotor::react( const EvExecute& )
@@ -481,17 +361,13 @@ sc::result StDriveTestSteeringMotor::react( const EvExecute& )
 	/* initialize all devices */
 	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
 	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
-		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
-
+		DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
+		motor->setProfilePosition(3.2);
 	}
 
-	return discard_event();
-}
-
-sc::result StDriveTestSteeringMotor::react( const EvEmergencyStop& )
-{
 	return forward_event();
 }
+
 
 sc::result StDriveTestSteeringMotor::react( const EvStateInfo& )
 {
@@ -500,12 +376,71 @@ sc::result StDriveTestSteeringMotor::react( const EvStateInfo& )
 	return discard_event();
 }
 
+//////////////////////////////////////////////////////////////////////////////
+StDriveTestAll::StDriveTestAll( my_context ctx ) :
+  my_base( ctx )
+{
+	ROS_INFO("Entering StDriveTestSteeringMotor");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->setEnableMotor();
+	}
+}
+
+StDriveTestAll::~StDriveTestAll() {
+	ROS_INFO("Exiting StDriveTestSteeringMotor");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->setDisableMotor();
+	}
+}
+
+sc::result StDriveTestAll::react( const EvExecute& )
+{
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+
+	/* set commands of driving motors */
+	for (int iDevice=0; iDevice < 6; iDevice++) {
+		DeviceELMODrivingMotor* motor =  (DeviceELMODrivingMotor*) devices->getDevice(iDevice);
+		motor->setProfileVelocity(1.0);
+	}
+
+	/* set commands of steering motors */
+	for (int iDevice=6; iDevice < 10; iDevice++) {
+		DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
+		motor->setProfilePosition(1.2*M_PI/2.0);
+
+	}
+
+	return forward_event();
+}
+
+
+sc::result StDriveTestAll::react( const EvStateInfo& )
+{
+	outermost_context().actualState_ = HDPCStateMachine::SM_DRIVE;
+	ROS_INFO("StDriveTestAll");
+	return discard_event();
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 StFault::StFault( my_context ctx ) :
   my_base( ctx )
 {
 	ROS_INFO("Entering StFault");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->setDisableMotor();
+	}
 }
 
 StFault::~StFault() {
@@ -516,21 +451,12 @@ StFault::~StFault() {
 
 sc::result StFault::react( const EvExecute& )
 {
-	outermost_context_type & machine = outermost_context();
-
-//	/* initialize all devices */
-//	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
-//	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
-//		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
-//		motor->initDevice();
-//	}
-
 	return forward_event();
 }
 
 sc::result StFault::react( const EvEmergencyStop& )
 {
-	return forward_event();
+	return discard_event();
 }
 
 sc::result StFault::react( const EvStateInfo& )
@@ -539,3 +465,202 @@ sc::result StFault::react( const EvStateInfo& )
 	ROS_INFO("StFault");
 	return discard_event();
 }
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//StStarting::StStarting( my_context ctx ): my_base( ctx ),
+//		sv_enabling_counter_(0),iDevice_(0)
+//{
+//	ROS_INFO("Entering StStarting");
+//	outermost_context_type & machine = outermost_context();
+//	const int nDevices = machine.busManager_->getBus(0)->getDeviceManager()->getSize();
+//	isEnabling_ = new bool[nDevices];
+//	isReallyEnabled_  = new bool[nDevices];
+//
+//	for(int iDevice=0; iDevice<nDevices; iDevice++) {
+//		isEnabling_[iDevice] = false;
+//		isReallyEnabled_[iDevice] = false;
+//	}
+//	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(false);
+//}
+//
+//StStarting::~StStarting()
+//{
+//	ROS_INFO("Exiting StStarting");
+//
+//	delete[] isEnabling_;
+//	delete[] isReallyEnabled_;
+//	outermost_context_type & machine = outermost_context();
+//	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(true);
+//}
+//
+//sc::result StStarting::react( const EvExecute & )
+//{
+//
+//	outermost_context_type & machine = outermost_context();
+//	const int nDevices = machine.busManager_->getBus(0)->getDeviceManager()->getSize();
+//
+//	DeviceELMOBaseMotor* motor = (DeviceELMOBaseMotor*) machine.busManager_->getBus(0)->getDeviceManager()->getDevice(iDevice_);
+//	bool isMotorEnabled;
+//	if (motor->getIsMotorEnabled(isMotorEnabled)) {
+//		/* data is available whether the motor is enabled or not */
+//		if (!isMotorEnabled) {
+//			/* motor is not enabled */
+//			if (!isEnabling_[iDevice_]) {
+//				/* motor should be enabled */
+//				motor->setEnableMotor();
+//				isEnabling_[iDevice_] = true;
+//			}
+//		} else {
+//			/* motor is enabled */
+//			isReallyEnabled_[iDevice_] = true;
+//		}
+//	}
+//
+//
+//	sv_enabling_counter_++;
+//	if (sv_enabling_counter_>100*2) {
+//		sv_enabling_counter_=0;
+//		iDevice_++;
+//	}
+//	if (iDevice_ >= nDevices) {
+//		bool allDevicesAreEnabled = true;
+//		for(int iDevice=0; iDevice<nDevices; iDevice++) {
+//			if (!isReallyEnabled_[iDevice]) {
+//				allDevicesAreEnabled = false;
+//				break;
+//			}
+//		}
+//
+//		if (allDevicesAreEnabled) {
+//			return transit< StDriveTestDrivingMotor >();
+//		} else if (sv_enabling_counter_ > 100*2) {
+//			for(int iDevice=0; iDevice<nDevices; iDevice++) {
+//				if (!isReallyEnabled_[iDevice]) {
+//					ROS_INFO("\e[0;31mMotor %d cannot be enabled!\n\e[0m", iDevice);
+//				}
+//			}
+//			return transit< StFault >();
+//		}
+//	}
+//	return  forward_event();
+//
+//}
+//
+//sc::result StStarting::react( const EvEmergencyStop& )
+//{
+//	return forward_event();
+//}
+//
+//sc::result StStarting::react( const EvStateInfo& )
+//{
+//	outermost_context().actualState_ = HDPCStateMachine::SM_STARTING;
+//	ROS_INFO("StStarting");
+//	return discard_event();
+//}
+
+
+////////////////////////////////////////////////////////////////////////////////
+//StStopping::StStopping( my_context ctx ) :
+//  my_base( ctx ),sv_disabling_counter_(0), iDevice_(0)
+//{
+//
+//	ROS_INFO("Entering StStopping");
+//
+//	outermost_context_type & machine = outermost_context();
+//
+//	const int nDevices = machine.busManager_->getBus(0)->getDeviceManager()->getSize();
+//	isDisabling_ = new bool[nDevices];
+//	isReallyDisabled_  = new bool[nDevices];
+//
+//	for(int iDevice=0; iDevice<nDevices; iDevice++) {
+//		isDisabling_[iDevice] = false;
+//		isReallyDisabled_[iDevice] = false;
+//	}
+//	machine.busManager_->getBus(0)->getRxPDOManager()->setSending(false);
+//}
+//
+//StStopping::~StStopping() {
+//
+//	ROS_INFO("Exiting StStopping");
+//
+//	delete[] isDisabling_;
+//	delete[] isReallyDisabled_;
+//	outermost_context_type & machine = outermost_context();
+//	//machine.busManager_->getBus(0)->getRxPDOManager()->setSending(true);
+//}
+//
+//sc::result StStopping::react( const EvExecute& )
+//{
+//	outermost_context_type & machine = outermost_context();
+//	const int nDevices = machine.busManager_->getBus(0)->getDeviceManager()->getSize();
+//
+//	DeviceELMOBaseMotor* motor = (DeviceELMOBaseMotor*) machine.busManager_->getBus(0)->getDeviceManager()->getDevice(iDevice_);
+//	bool isMotorDisabled;
+//	if (motor->getIsMotorDisabled(isMotorDisabled)) {
+//		/* data is available whether the motor is enabled or not */
+//		if (!isMotorDisabled) {
+//			/* motor is enabled */
+//			if (!isDisabling_[iDevice_]) {
+//				/* motor should be enabled */
+//				ROS_INFO("Disable motor");
+//				motor->setDisableMotor();
+//				isDisabling_[iDevice_] = true;
+//			}
+//
+//		} else {
+//			/* motor is disabled */
+//			isReallyDisabled_[iDevice_] = true;
+//			iDevice_++;
+//			sv_disabling_counter_=0;
+//		}
+//	}
+//
+//
+//
+//	sv_disabling_counter_++;
+//	if (sv_disabling_counter_>100*2) {
+//		sv_disabling_counter_=0;
+//		iDevice_++;
+//	}
+//
+//
+//	if (iDevice_ >= nDevices) {
+//		bool allDevicesAreDisabled = true;
+//		for(int iDevice=0; iDevice<nDevices; iDevice++) {
+//			if (!isReallyDisabled_[iDevice]) {
+//				allDevicesAreDisabled = false;
+//				break;
+//			}
+//		}
+//
+//		if (allDevicesAreDisabled) {
+//			if (machine.isInStFault_) {
+//				return transit< StFault >();
+//			}
+//			return transit< StStop >();
+//		} else {
+//			for(int iDevice=0; iDevice<nDevices; iDevice++) {
+//				if (!isReallyDisabled_[iDevice]) {
+//					ROS_INFO("\e[0;31mMotor %d is not disabled!\n\e[0m", iDevice);
+//				}
+//			}
+//			return transit< StFault >();
+//		}
+//
+//	}
+//	return  forward_event();
+//}
+//
+//sc::result StStopping::react( const EvEmergencyStop& )
+//{
+//	return forward_event();
+//}
+//
+//sc::result StStopping::react( const EvStateInfo& )
+//{
+//	outermost_context().actualState_ = HDPCStateMachine::SM_STOPPING;
+//	ROS_INFO("StStopping");
+//	return discard_event();
+//}

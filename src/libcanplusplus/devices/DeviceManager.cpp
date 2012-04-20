@@ -42,7 +42,7 @@ Device* DeviceManager::getDevice(unsigned int index)
 {
 	try {
 		if (index >= devices_.size()) {
-			std::string error = "DeviceManager: Could not get PDO with index "
+			std::string error = "DeviceManager: Could not get device with index "
 								+ boost::lexical_cast<std::string>(index) + "!";
 			throw std::out_of_range(error);
 		}

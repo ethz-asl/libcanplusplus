@@ -19,18 +19,7 @@
 #define WRITE_2_BYTE 0x2b
 #define WRITE_4_BYTE 0x23
 
-#define STATUSWORD_READY_TO_SWITCH_ON_BIT 0
-#define STATUSWORD_SWITCHED_ON_BIT 1
-#define STATUSWORD_OPERATION_ENABLE_BIT 2
-#define STATUSWORD_FAULT_BIT 3
-#define STATUSWORD_VOLTAGE_ENABLE_BIT 4
-#define STATUSWORD_QUICK_STOP_BIT 5
-#define STATUSWORD_SWITCH_ON_DISABLE_BIT 6
-#define STATUSWORD_NO_USED_WARNING_BIT 7
-#define STATUSWORD_OFFSET_CURRENT_MEASURED_BIT 8
-#define STATUSWORD_REMOTE_BIT 9
-#define STATUSWORD_OPERATIN_MODE_SPECIFIC_BIT 10
-#define STATUSWORD_INTERNAL_LIMIT_ACTIVE_BIT 11
+#include "StatusWordBits.hpp"
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1144,5 +1133,18 @@ public:
 		return isReceived_;
 	}
 };
+
+
+//////////////////////////////////////////////////////////////////////////////
+//!  ELMO
+class SDOSetHomeOffset: public SDOWrite
+{
+public:
+	SDOSetHomeOffset(int inSDOSMId, int outSDOSMId, int nodeId, int offset_counts):
+		SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x607C, 0x00, offset_counts)
+	{};
+	virtual ~SDOSetHomeOffset(){};
+};
+
 
 #endif /* SDOEPOS2MOTOR_HPP_ */
