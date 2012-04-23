@@ -1,3 +1,3 @@
 Header header
-bool[] isActive
-float32[] command
+bool[10] isActive
+float32[10] command

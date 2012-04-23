@@ -151,6 +151,7 @@ public:
 
 	//! identifier of shared memory of received SDO
 	int inSDOSMId_;
+
 	//! identifier of shared memory of sent SDO
 	int outSDOSMId_;
 
@@ -169,17 +170,17 @@ public:
 							  int txPDO4SMId,
 							  int inSDOSMId,
 							  int outSDOSMId)
-	:rxPDO1SMId_(rxPDO1SMId),
+	:homeOffsetJointPosition_rad(0),
+	 analog_voltage_to_rad_slope(0),
+	 analog_voltage_to_rad_offset(0),
+	 rxPDO1SMId_(rxPDO1SMId),
 	 rxPDO2SMId_(rxPDO2SMId),
 	 txPDO1SMId_(txPDO1SMId),
 	 txPDO2SMId_(txPDO2SMId),
 	 txPDO3SMId_(txPDO3SMId),
 	 txPDO4SMId_(txPDO4SMId),
 	 inSDOSMId_(inSDOSMId),
-	 outSDOSMId_(outSDOSMId),
-	 homeOffsetJointPosition_rad(0),
-	 analog_voltage_to_rad_slope(0),
-	 analog_voltage_to_rad_offset(0)
+	 outSDOSMId_(outSDOSMId)
 	{
 
 	}

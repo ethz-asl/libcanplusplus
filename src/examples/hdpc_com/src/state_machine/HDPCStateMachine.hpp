@@ -11,6 +11,8 @@
 #ifndef HDPCSTATEMACHINE_HPP_
 #define HDPCSTATEMACHINE_HPP_
 
+#include "HDPCStateMachineEnums.h"
+
 #include "ros/ros.h"
 #include "hdpc_com/ChangeStateMachine.h"
 #include "hdpc_com/Commands.h"
@@ -31,25 +33,22 @@ namespace sc = boost::statechart;
 //////////////////////////////////////////////////////////////////////////////
 /*! events */
 
-//! gets state information
+//! gets state information, i.e. writes state enum to machine.actualState_
 struct EvStateInfo : sc::event< EvStateInfo > {};
 
-//! Terminate state machine
+//! terminates the state machine
 struct EvTerminateSM : sc::event< EvTerminateSM > {};
 
-//! emergency stop -> goes to state enabled
+//! emergency stop -> goes to fault state
 struct EvEmergencyStop : sc::event< EvEmergencyStop > {};
 
-
-
-
-//! executes state
+//! executes a state
 struct EvExecute : sc::event< EvExecute > {};
 
 //! service event stopping
 struct EvStopping : sc::event< EvStopping > {};
 
-//! service event reseging
+//! service event reseting
 struct EvReseting : sc::event< EvReseting > {};
 
 //! service event starting
@@ -63,23 +62,7 @@ struct HDPCStateMachine;
 struct HDPCStateMachine : sc::state_machine<HDPCStateMachine, StTop>
 {
 public:
-	//! States that are returned by srvChangeState()
-	enum HDPCSTATE {
-		SM_INITIALIZING = 0,
-		SM_STOPPING,
-		SM_STOP,
-		SM_STARTING,
-		SM_DRIVE,
-		SM_FAULT
-	};
 
-	//! Events that are allowed to be received by srvChangeState()
-	enum HDPCEVENT {
-		EVENT_READSTATEONLY = 0,
-		EVENT_STARTING,
-		EVENT_STOPPING,
-		EVENT_RESETING
-	};
 
 	//! actual state of the state machine
 	HDPCSTATE actualState_;
@@ -87,8 +70,6 @@ public:
 	//! reference to bus manager
 	BusManager* busManager_;
 
-
-	bool isInStFault_;
 
 	//! commands that are received by commandsCallback()
 	hdpc_com::Commands commands_;
@@ -109,9 +90,7 @@ public:
 	//! Read out measurements from CAN message and publish them
 	void publishReadings();
 
-	void checkStatus();
 
-	bool isStarting_;
 private:
 	//! Node handle
 	boost::shared_ptr<ros::NodeHandle> ros_node_;
@@ -124,8 +103,6 @@ private:
 
 	//! publisher
 	ros::Publisher ros_pub_;
-
-
 
 	//! readings that are published
 	hdpc_com::Readings readings_;
@@ -140,8 +117,8 @@ private:
 	bool srvChangeState(hdpc_com::ChangeStateMachine::Request  &req,
 			hdpc_com::ChangeStateMachine::Response &res );
 
-
 	/*! callback function for commands message
+	 * stores the commands in commands_
 	 * @param msg	received message
 	 */
 	void commandsCallback(hdpc_com::Commands msg);

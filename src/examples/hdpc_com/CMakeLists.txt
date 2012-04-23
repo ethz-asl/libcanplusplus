@@ -27,6 +27,8 @@ rosbuild_gensrv()
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 
+rosbuild_add_boost_directories()
+
 set(CAN_SOURCE_DIR
  ../../..
 )

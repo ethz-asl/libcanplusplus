@@ -4,7 +4,7 @@
  * @author 	Christian Gehring
  * @date 	Apr, 2012
  * @version 1.0
- * @ingroup robotCAN, device
+ * @ingroup robotCAN
  *
  */
 
@@ -83,7 +83,6 @@ struct StHoming : sc::state< StHoming, StTop >
 };
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 struct StDriveTestDrivingMotor;
 struct StDriveTestSteeringMotor;
@@ -106,6 +105,27 @@ struct StStop : sc::state< StStop, StTop >
     sc::result react( const EvExecute& );
     sc::result react( const EvStateInfo& );
     sc::result react( const EvStopping& );
+
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+struct StFault : sc::state< StFault, StTop >
+{
+  public:
+    typedef mpl::list<
+      sc::custom_reaction< EvExecute >,
+      sc::custom_reaction< EvEmergencyStop >,
+      sc::custom_reaction< EvStateInfo >,
+      sc::transition<EvReseting, StInit>
+    > reactions;
+
+    StFault( my_context ctx );
+    virtual ~StFault();
+
+    sc::result react( const EvExecute& );
+    sc::result react( const EvEmergencyStop& );
+    sc::result react( const EvStateInfo& );
 
 };
 
@@ -198,71 +218,7 @@ struct StDriveTestAll : sc::state< StDriveTestAll, StDriveTop >
 
 };
 
-//////////////////////////////////////////////////////////////////////////////
-struct StFault : sc::state< StFault, StTop >
-{
-  public:
-    typedef mpl::list<
-      sc::custom_reaction< EvExecute >,
-      sc::custom_reaction< EvEmergencyStop >,
-      sc::custom_reaction< EvStateInfo >,
-      sc::transition<EvReseting, StInit>
-    > reactions;
 
-    StFault( my_context ctx );
-    virtual ~StFault();
-
-    sc::result react( const EvExecute& );
-    sc::result react( const EvEmergencyStop& );
-    sc::result react( const EvStateInfo& );
-
-};
-
-////////////////////////////////////////////////////////////////////////////////
-//struct StStarting : sc::state< StStarting, StTop >
-//{
-//  public:
-//    typedef mpl::list<
-//      sc::custom_reaction< EvExecute >,
-//      sc::custom_reaction< EvEmergencyStop >,
-//      sc::custom_reaction< EvStateInfo >
-//    > reactions;
-//
-//    StStarting( my_context ctx );
-//    virtual ~StStarting();
-//
-//    sc::result react( const EvExecute& );
-//    sc::result react( const EvEmergencyStop& );
-//    sc::result react( const EvStateInfo& );
-//  private:
-//    int sv_enabling_counter_;
-//    int iDevice_;
-//    bool* isEnabling_;
-//    bool* isReallyEnabled_;
-//};
-
-////////////////////////////////////////////////////////////////////////////////
-//struct StStopping : sc::state< StStopping, StTop >
-//{
-//  public:
-//    typedef mpl::list<
-//      sc::custom_reaction< EvExecute >,
-//      sc::custom_reaction< EvEmergencyStop >,
-//      sc::custom_reaction< EvStateInfo >
-//    > reactions;
-//
-//    StStopping( my_context ctx );
-//    virtual ~StStopping();
-//
-//    sc::result react( const EvExecute& );
-//    sc::result react( const EvEmergencyStop& );
-//    sc::result react( const EvStateInfo& );
-//  private:
-//    int sv_disabling_counter_;
-//    int iDevice_;
-//    bool* isDisabling_;
-//    bool* isReallyDisabled_;
-//};
 
 
 #endif /* HDPCSTATES_HPP_ */
