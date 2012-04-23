@@ -2,6 +2,16 @@
   <description brief="hdpc_com">
 
      hdpc_com
+     Motor Array 1: FL Drive
+		 2: FR Drive
+		 3: CL Drive
+		 4: CR Drive
+		 5: RL Drive
+		 6: RR Drive
+		 7: FL Steering
+		 8: FR Steering
+		 9: RL Steering
+		 10: RR Steering
 
   </description>
   <author>Christian Gehring</author>
