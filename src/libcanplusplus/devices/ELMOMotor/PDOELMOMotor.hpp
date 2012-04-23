@@ -94,9 +94,7 @@ public:
 		//length_[3] = 4;
 	};
 
-	virtual ~RxPDOPosition() {
-//		printf("~RxPDOVelocity()\n");
-	};
+	virtual ~RxPDOPosition() {};
 
 	void setPosition(int position)
 	{
@@ -185,29 +183,6 @@ public:
 		length_[6] = 1;
 		length_[7] = 1;
 
-//		// transform into little endian format
-//			for (int i=0; i<4; i++)
-//				value_[4+i] = (cmdValue>>(i*8)) & 0xff;
-//
-//			if(nodeId == 0){
-//				// all nodes
-//				length_[0]=1;
-//				length_[1]=1;
-//				length_[2]=1;
-//				length_[3]=1;
-//				value_[0]=1; 	//Set Elmo to remote access
-//				value_[1]=0; 	//message sent to all Elmos
-//				}
-//			else{
-//				length_[0] = 1;
-//				length_[1] = 1;
-//				length_[2] = 1;
-//				length_[3] = 1;
-//				length_[4] = 1;
-//				length_[5] = 1;
-//				length_[6] = 1;
-//				length_[7] = 1;
-//			}
 
 	};
 
@@ -226,10 +201,7 @@ public:
 
 	};
 
-	virtual ~TxPDOPositionVelocity()
-	{
-//		printf("~TxPDOPositionVelocity()\n");
-	};
+	virtual ~TxPDOPositionVelocity() {};
 
 	virtual void processMsg()
 	{
