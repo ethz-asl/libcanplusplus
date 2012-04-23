@@ -1,0 +1,18 @@
+<package>
+  <description brief="hdpc_teleop">
+
+     hdpc_teleop
+
+  </description>
+  <author>Cedric Pradalier</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/hdpc_teleop</url>
+  <depend package="hdpc_drive"/>
+  <depend package="roscpp"/>
+  <depend package="joy"/>
+  <depend package="geometry_msgs"/>
+
+</package>
+
+
