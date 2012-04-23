@@ -20,3 +20,4 @@ set(SRCS
 
 add_executable(singleELMOandRE40MotorPThread ${SRCS})
 target_link_libraries(singleELMOandRE40MotorPThread m bluetooth cpc pthread rt CAN)
+

@@ -17,7 +17,6 @@
 	#include "SLUtility.h"
 #endif
 
-
 #include "CANSharedMemory.hpp"
 
 #ifdef USE_SL_FUNCTIONS
@@ -26,8 +25,6 @@
 	#include "SL_shared_memory.h"
 #endif
 #include "SLSharedMemory.hpp"
-
-
 
 
 /* global variables */
@@ -262,12 +259,9 @@ init_can_shared_memory(void)
   if (!init_sm_sem_can("smCANBusWaitFourSem", SEM_EMPTY,(void**)&sm_canbus_wait_four_sem))
      return FALSE;
 
-
-
   return TRUE;
 
 }
-
 
 
 

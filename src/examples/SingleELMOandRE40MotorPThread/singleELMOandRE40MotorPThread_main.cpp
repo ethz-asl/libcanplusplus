@@ -126,8 +126,8 @@ STATEMACHINE stateSM = SM_INIT_MOTOR;
 /* Prototypes */
 
 //! thread function
-void *main_routine(void *arg);
-void *bus_routine(void *arg);
+void* main_routine(void *arg);
+void* bus_routine(void *arg);
 
 //! signal handler
 void catch_signal(int sig);
@@ -187,6 +187,7 @@ int main(int argc, char** args)
 	for (int i=0; i<nBuses; i++) {
 		busRoutineArgs[i].iBus = i;
 		busRoutineArgs[i].time_step_ms = time_step_ms;
+		busRoutineArgs[i].handle = 0;
 	}
 
 	/* add devices to bus manager */
@@ -212,7 +213,7 @@ int main(int argc, char** args)
 		}
 	}
 
-	int rc = pthread_create(&main_task, NULL, main_routine, (void *) &busRoutineArgs[0]);
+	int rc = pthread_create(&main_task, NULL,  main_routine, (void *) &busRoutineArgs[0]);
     assert(0 == rc);
 
 	rc = pthread_create(&bus_task, NULL, bus_routine, (void *) &busRoutineArgs[0]);
@@ -229,7 +230,7 @@ int main(int argc, char** args)
 
 }
 //////////////////////////////////////////////////////////////////////////////
-void *main_routine(void *arg)
+void* main_routine(void *arg)
 {
 
 	// variables for timing
@@ -409,7 +410,7 @@ void *main_routine(void *arg)
 
 
 //////////////////////////////////////////////////////////////////////////////
-void *bus_routine(void *arg)
+void* bus_routine(void *arg)
 {
 
 	// variables for timing
@@ -417,7 +418,9 @@ void *bus_routine(void *arg)
 	struct timeval    start_tp;
 
 	// name of the channel
-	char channelname[100];
+	char channelname[6];
+
+
 	//! CAN messages to send from shared memory
 	CAN_BusDataDes canDataDes[nBuses][nDesMsg];
 	//! if true, device is unplugged
@@ -443,7 +446,7 @@ void *bus_routine(void *arg)
 		/* open channel */
 		sprintf(channelname, "CHAN0%d", busRoutineArgs[i].iBus);
 
-		busRoutineArgs[i].handle  = CPC_OpenChannel((char*)channelname);
+		busRoutineArgs[i].handle  = CPC_OpenChannel(channelname);
 		printf("Opened channel with handle: %d\n", busRoutineArgs[i].handle);
 
 		if(busRoutineArgs[i].handle < 0) {
@@ -749,6 +752,7 @@ void catch_signal(int sig)
 
 	// the stop procedure needs to be run only once!
 	if (!hasTerminated) {
+		hasTerminated = true;
 		// run emergency stop
 		emergency_stop();
 
@@ -818,7 +822,7 @@ void catch_signal(int sig)
 			CPC_CloseChannel(busRoutineArgs[i].handle);
 		}
 
-		hasTerminated = true;
+
 
 	}
 }

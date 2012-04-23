@@ -23,7 +23,7 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/include/LibCANConfig.h"
 )
 
-
+find_package(Boost REQUIRED)
 
 
 ################

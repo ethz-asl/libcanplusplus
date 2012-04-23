@@ -19,8 +19,6 @@
 #endif
 
 
-
-
 typedef struct smCANBusDataDes {
   SEM_ID          sm_sem;
   float           ts;

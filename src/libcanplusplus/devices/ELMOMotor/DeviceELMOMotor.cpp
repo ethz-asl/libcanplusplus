@@ -27,6 +27,9 @@ DeviceELMOMotor::~DeviceELMOMotor()
 		delete deviceParams_;
 	}
 
+
+	delete rxPDOPosition_;
+	delete rxPDOELMOBinaryInterpreterCmd_;
 }
 
 

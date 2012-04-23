@@ -38,7 +38,7 @@ Bus*  BusManager::getBus(unsigned int index)
 {
 	try {
 		if (index >= buses_.size()) {
-			std::string error = "BusManager: Could not get PDO with index "
+			std::string error = "BusManager: Could not get bus with index "
 								+ boost::lexical_cast<std::string>(index) + "!";
 			throw std::out_of_range(error);
 		}
