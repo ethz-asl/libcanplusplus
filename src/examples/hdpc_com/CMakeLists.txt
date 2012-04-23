@@ -30,7 +30,7 @@ rosbuild_gensrv()
 rosbuild_add_boost_directories()
 
 set(CAN_SOURCE_DIR
- ../../..
+ ${PROJECT_SOURCE_DIR}/../../..
 )
 
 
@@ -42,14 +42,14 @@ include_directories(
 	${CAN_SOURCE_DIR}/src/libcanplusplus/bus
 	${CAN_SOURCE_DIR}/src/libcanplusplus/devices
 	${CAN_SOURCE_DIR}/src/libcanplusplus/devices/ELMOMotor
-	.
-	./include
-	./src/devices
-	./src/state_machine
+	${PROJECT_SOURCE_DIR}/.
+	${PROJECT_SOURCE_DIR}/include
+	${PROJECT_SOURCE_DIR}/src/devices
+	${PROJECT_SOURCE_DIR}/src/state_machine
 	
 
 )
-link_directories(${CAN_SOURCE_DIR}/../lib)
+link_directories(${CAN_SOURCE_DIR}/lib)
 
 #MESSAGE(STATUS "${LIBRARY_OUTPUT_PATH}")
 set(SRCS
@@ -62,4 +62,4 @@ set(SRCS
 )
 
 rosbuild_add_executable(hdpc_com ${SRCS})
-target_link_libraries(hdpc_com m bluetooth cpc pthread rt CAN)
+target_link_libraries(hdpc_com CAN m bluetooth cpc pthread rt ) 
