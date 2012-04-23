@@ -66,14 +66,14 @@ bool HDPCStateMachine::srvChangeState(hdpc_com::ChangeStateMachine::Request  &re
 
 
 	/* debugging */
-	ROS_INFO("Service Change State: ");
-	ROS_INFO("event: %d", req.event);
-	ROS_INFO("state: %d", actualState_);
-	DeviceManager* devices = busManager_->getBus(0)->getDeviceManager();
-	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
-		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
-		motor->printStatusword();
-	}
+//	ROS_INFO("Service Change State: ");
+//	ROS_INFO("event: %d", req.event);
+//	ROS_INFO("state: %d", actualState_);
+//	DeviceManager* devices = busManager_->getBus(0)->getDeviceManager();
+//	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+//		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+//		motor->printStatusword();
+//	}
 
 	return true;
 }

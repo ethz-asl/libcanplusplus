@@ -24,7 +24,6 @@
 
 
 #include "hdpc_com_main.hpp"
-
 #include "HDPCStateMachine.hpp"
 
 /* devices */
@@ -38,6 +37,7 @@ using namespace std;
 //! manager of all CAN buses
 BusManager busManager;
 
+//! state machine
 HDPCStateMachine stateMachine(&busManager);
 
 /* parameters */
@@ -628,7 +628,6 @@ void msg_handler(int handle, const CPC_MSG_T * cpcmsg, void *customPointer)
 	CAN_BusDataMeas canDataMeas;
 	const int iBus = handle;
 
-//	printf("Received a Message!\n");
 
 	canDataMeas.flag = 1;
 	canDataMeas.COBId = cpcmsg->msg.canmsg.id;
@@ -648,6 +647,7 @@ void msg_handler(int handle, const CPC_MSG_T * cpcmsg, void *customPointer)
 				/* no error */
 				;
 			} else if ((canDataMeas.value[0] == 0x00) && (canDataMeas.value[1] == 0x63)) {
+				/* emergency stop was pressed */
 				//stateMachine.process_event(EvEmergencyStop());
 			} else if ((canDataMeas.value[0] == 0x41) && (canDataMeas.value[1] == 0x54)&& (canDataMeas.value[2] == 0x21)) {
 				/* limit switch error */
@@ -672,6 +672,7 @@ void msg_handler(int handle, const CPC_MSG_T * cpcmsg, void *customPointer)
 
 			}
 		}
+		/* debugging */
 //		printf("Warning: Received CAN message that is not handled!\n");
 //		printf("\e[0;31m(COB_ID: 0x%02X / code: 0x%02X%02X)\n", canDataMeas.COBId, canDataMeas.value[1], canDataMeas.value[0]);
 //		printf("==============>\n");
@@ -713,23 +714,7 @@ int getMsgIdxFromCOBId(int iBus, int COBId)
 	}
 	return -1;
 
-//	switch (COBId) {
-//	// Motor TxPDO
-//
-//	case TxPDO3Id+NODEID_ELMO0:
-//		return MEASSMID_TxPDO_ELMO0_POSITION_VELOCITY;
-//	case TxPDO4Id+NODEID_ELMO0:
-//		return MEASSMID_TxPDO_ELMO0_ANALOG_CURRENT;
-//	// Motor  SDO
-//	case SDOId+NODEID_ELMO0:
-//	case NMTEnteredPreOperational+NODEID_ELMO0:
-//		return MEASSMID_SDO_ELMO0;
-//	default:
-//		/* not handled CAN message */
-//		return -1;
-//		break;
-//	}
-//	return 0;
+
 }
 
 

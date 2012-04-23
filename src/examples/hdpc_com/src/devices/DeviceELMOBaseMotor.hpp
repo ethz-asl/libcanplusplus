@@ -28,7 +28,7 @@ class Device;
  */
 class DeviceELMOBaseMotor: public Device {
 public:
-
+	//! temporary variable to store absolute homing position from analog input readings
 	double absHomingPosition_;
 
 	/*! Constructor
@@ -134,12 +134,18 @@ public:
 	//! Disable the EPOS using a SDO
 	virtual void setDisableMotor();
 
+	//! starts the remote node
 	virtual void startRemoteNode();
 
+	//! prints the statusword for debugging
 	virtual int printStatusword();
 
+	//! Gets the status via statusword
 	TxPDOAnalogCurrent* getStatus();
 
+	/*! Sets the home offset for joint positions that are output of  getPosition()
+	 * @param homeOffsetJointPosition_rad
+	 */
 	void setHomeOffsetJointPosition(double homeOffsetJointPosition_rad);
 
 protected:

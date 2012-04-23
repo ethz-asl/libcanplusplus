@@ -61,18 +61,12 @@ public:
 	 */
 	void setProfilePosition(double jointPosition_rad);
 
-	//! Enable the EPOS
+	//! Enable the ELMO
 	virtual void setEnableMotor();
 
-	//! Disable the EPOS
+	//! Disable the ELMO
 	virtual void setDisableMotor();
 
-
-	virtual void initMotor();
-
-
-
-	void setHomeOffset(double jointPosition_rad);
 
 protected:
 	//! PDO message to send motor position command
