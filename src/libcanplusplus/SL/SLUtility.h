@@ -187,20 +187,7 @@ extern "C" {
 
 
 
-  /* read/write an mrdplot file */
-  int
-  mrdplot_convert(char *fname, Matrix *D, char ***vnames, char ***units,
-		  double *freq, int *n_cols, int *n_rows);
-  int
-  mrdplot_gen(char *fname, Matrix D, char **vnames, char **units,
-	      double freq, int n_cols, int n_rows);
 
-  int
-  clmcplot_convert(char *fname, Matrix *D, char ***vnames, char ***units,
-		   double *freq, int *n_cols, int *n_rows);
-  int
-  clmcplot_gen(char *fname, Matrix D, char **vnames, char **units,
-	       double freq, int n_cols, int n_rows);
 
   /* a save rand() function */
   double   my_ran0(int *idum);
