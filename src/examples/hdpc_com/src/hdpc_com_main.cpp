@@ -46,6 +46,7 @@ HDPCStateMachine stateMachine(&busManager);
 const int nBuses = 1;
 
 
+
 //! cycle rate of loop in millisec
 const double time_step_ms = 10;//2.5;
 
@@ -122,11 +123,20 @@ int main(int argc, char** argv)
 	servo_base_rate = motor_servo_rate;
 
 	ros::init(argc, argv, "hdpc_com", ros::init_options::NoSigintHandler);
+
+
+	//! number of measurement messages per Bus (6xPDOPositionVelocity + 6xSDO)
+	nMeasMsg = 30;
+	//! number of desired messages per Bus (3xPDOVelocity + 1xPDOSync + 1xSDO)
+	nDesMsg = 21;
+
 	// init shared memory that is used to communicate between the main and bus routine
 	if(!init_can_shared_memory()) {
 		printf("Could not init shared memory!");
 		exit(-1);
 	}
+
+
 
 	/* initialize the initial arguments of the bus routines */
 	for (int i=0; i<nBuses; i++) {

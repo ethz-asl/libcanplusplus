@@ -103,8 +103,8 @@ extern smCANBusDataMeas *sm_canbusdata_meas_four;
 extern SEM_ID            sm_canbusdata_meas_four_sem;
 extern CAN_BusDataMeas  *sm_canbusdata_meas_four_data;
 
-extern const int nMeasMsg;
-extern const int nDesMsg;
+extern int nMeasMsg;
+extern int nDesMsg;
 
   int   init_can_shared_memory(void);
 //  extern STATUS 	semGiveCount (SEM_ID semId);

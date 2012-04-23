@@ -31,6 +31,12 @@
 #include "unistd.h"
 #include "pthread.h"
 
+#include <string.h>
+
+//#ifdef __cplusplus
+//#define extern "C" {
+//#endif
+
 extern int 			servo_base_rate;
 
 // needed for book keeping of share memory
@@ -52,8 +58,8 @@ typedef union {
 
 
 //! list of all allocated shared memory objects
-#define MAX_SM
-static int sm_ids_list[1000];
+//#define MAX_SM
+//static int sm_ids_list[1000];
 
 //! user function to be called on exit
 static void (*user_signal_handler)(void) = NULL;  //!< function pointer
@@ -176,7 +182,7 @@ smMemCalloc (char *shmname, int id, int elemNum, int elemSize)
   key_t  shmkey = 0;
   void  *ptr;
   long   shmid;
-  struct shmid_ds ds;
+//  struct shmid_ds ds;
   STATUS error;
 
   // create a key for the shared memory
@@ -491,7 +497,7 @@ STATUS
 semGive (SEM_ID semId)
 {
   struct sembuf   sembuf[2];
-  int val=0;
+//  int val=0;
 
   // first ensure that the semaphore is 0
   sembuf[0].sem_num = 0;
@@ -538,7 +544,7 @@ semFlush (SEM_ID semId)
   semunion    arg;
   struct sembuf   sembuf;
   int         rc;
-  int         i;
+//  int         i;
 
   // get the number of processes waiting for this semaphore
   rc = semctl(semId,0,GETNCNT,arg);
@@ -596,7 +602,7 @@ removeSharedMemory(int dummy)
   SM_PTR sptr;
   semunion arg;
   struct shmid_ds shm_ds;
-  char string[100];
+//  char string[100];
 
   sptr = smlist;
 
@@ -888,11 +894,11 @@ getClockResolution(void)
 {
   static int firsttime = TRUE;
   static long  long period = 1e10;
-  long long new_period, total_time;
-  int i,j;
-  int r=25;
+//  long long new_period, total_time;
+//  int i,j;
+//  int r=25;
   struct timespec ns;
-  struct timeval ts,te,fn_start_time;
+//  struct timeval ts,te,fn_start_time;
 
 
   if (firsttime) {
@@ -949,4 +955,8 @@ getClockResolution(void)
   return period;
 
 }
+
+//#ifdef __cplusplus
+//}
+//#endif
 

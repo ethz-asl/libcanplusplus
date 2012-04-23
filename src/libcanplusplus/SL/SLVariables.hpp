@@ -20,7 +20,7 @@ extern "C" {
 
 
 //! string to define part of the name of a shared variable
-char* robot_name = "libCAN";
+char* robot_name = (char*) "libCAN";
 int parent_process_id = 0;
 //! Required by shared memory functions
 int servo_base_rate = 400;

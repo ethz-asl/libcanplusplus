@@ -27,9 +27,6 @@
 #include "SLSharedMemory.hpp"
 
 
-
-#define DEBUG FALSE
-
 #define TIME_OUT_NS 1000000000
 
 
