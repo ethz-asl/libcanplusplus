@@ -1,0 +1,10 @@
+<launch>
+    <!-- We're not setting the parameter here. It is expected that the drive node will have set them up correctly-->
+
+    <node type="hdpc_teleop" pkg="hdpc_teleop" name="hdpc_teleop" output="screen">
+        <param name="max_rotational_velocity" value="0.5" />
+        <param name="max_linear_velocity" value="0.5" />
+    </node>
+
+    
+</launch>
