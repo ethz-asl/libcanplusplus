@@ -5,9 +5,9 @@
 #include <hdpc_drive/SetControlMode.h>
 #include <hdpc_drive/Ackermann.h>
 #include <hdpc_drive/DirectDrive.h>
-#include <hdpc_drive/HDPCConst.h>
 #include <hdpc_drive/Status.h>
 
+#include <hdpc_com/HDPCConst.h>
 #include <hdpc_com/ChangeStateMachine.h>
 #include <hdpc_com/Commands.h>
 #include <hdpc_com/Readings.h>
@@ -15,6 +15,7 @@
 #include <hdpc_com/HDPCGeometry.h>
 
 using namespace hdpc_drive;
+using namespace hdpc_com;
 
 class HDPCDrive {
     protected:
@@ -36,7 +37,7 @@ class HDPCDrive {
         ros::Publisher status_pub;
 
         unsigned int control_mode;
-        static const unsigned int WATCHDOG_INIT = 2;
+        static const unsigned int WATCHDOG_INIT = 100;
         unsigned int watchdog;
 
         void stop_rover() {
@@ -257,7 +258,7 @@ class HDPCDrive {
         HDPCDrive(ros::NodeHandle & nh) : geom(nh) {
             command_pub = nh.advertise<hdpc_com::Commands>("/hdpc_com/commands",1);
             reading_sub = nh.subscribe("/hdpc_com/readings",1,&HDPCDrive::readingsCallback,this);
-            state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/change_state_machine");
+            state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/changeState");
 
 
             control_mode_serv = nh.advertiseService("set_control_mode",&HDPCDrive::set_mode,this);
@@ -276,11 +277,12 @@ class HDPCDrive {
 
         bool wait_for_services() {
             state_machine_client.waitForExistence();
+	    ROS_INFO("State machine service is ready");
             return true;
         }
         
         void main_loop() {
-            ros::Rate rate(1);
+            ros::Rate rate(50);
             while (ros::ok()) {
                 ros::spinOnce();
                 if (watchdog == 0) {
