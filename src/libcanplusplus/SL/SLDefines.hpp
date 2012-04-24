@@ -18,7 +18,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	extern char         *robot_name;
+	extern const char         *robot_name;
 	extern int           parent_process_id;
 
 
