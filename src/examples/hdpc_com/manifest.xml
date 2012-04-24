@@ -19,6 +19,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/hdpc_com</url>
   <depend package="roscpp"/>
+  <export>
+    <!-- The standard flags that allow other packages to include and link this package -->
+      <cpp cflags="-I${prefix}/include" />
+  </export>
 
 </package>
 

@@ -1,9 +1,12 @@
 
+#include <math.h>
 
 #include <ros/ros.h>
 #include <hdpc_drive/SetControlMode.h>
 #include <hdpc_drive/Ackermann.h>
 #include <hdpc_drive/DirectDrive.h>
+#include <hdpc_drive/HDPCConst.h>
+#include <hdpc_drive/Status.h>
 
 #include <hdpc_com/ChangeStateMachine.h>
 #include <hdpc_com/Commands.h>
@@ -14,16 +17,18 @@ using namespace hdpc_drive;
 
 class HDPCDrive {
     protected:
-        float rover_center_to_front;
-        float rover_center_to_rear;
-        float rover_width;
+        double rover_center_to_front;
+        double rover_center_to_rear;
+        double rover_width;
 
         // Transition value between rotation on the spot and ackermann
-        float elevation_boundary_rad;
+        double elevation_boundary_rad;
+        double max_rotation_speed_rad_per_s;
+        double max_linear_speed_m_per_s;
     protected:
         ros::Publisher command_pub;
         ros::Subscriber reading_sub;
-        ros::ServiceClient state_machine_serv;
+        ros::ServiceClient state_machine_client;
 
 
         ros::ServiceServer control_mode_serv;
@@ -36,12 +41,12 @@ class HDPCDrive {
         unsigned int watchdog;
 
         void stop_rover() {
-            if (control_mode == SetControlMode::MODE_STOPPED) {
+            if (control_mode == HDPCConst::MODE_STOPPED) {
                 return;
             }
 
             hdpc_com::Commands cmd;
-            cmd.header = ros::Time::now();
+            cmd.header.stamp = ros::Time::now();
             for (unsigned int i=0;i<10;i++) {
                 cmd.isActive[i] = false;
                 cmd.command[i] = 0;
@@ -49,26 +54,52 @@ class HDPCDrive {
             command_pub.publish(cmd);
 
             hdpc_com::ChangeStateMachine change_state;
-            change_state.event = EVENT_STOP;
-            state_machine_serv.call(change_state);
+            change_state.request.event = EVENT_STOP;
+            state_machine_client.call(change_state);
 
-            control_mode = SetControlMode::MODE_STOPPED;
+            control_mode = HDPCConst::MODE_STOPPED;
             ROS_INFO("Rover entered STOPPED mode");
         }
 
-        void drive_rover(float velocity_ms, float elevation_rad) {
+        void vel_and_steering(float v_c, float elev, float x_w, float y_w, float *v_w, float *steering_w=NULL) {
+            float r = tan(elev);
+            float r2 = r*r;
+            if (steering_w) {
+                *steering_w = atan(x_w/(r-y_w));
+            }
+            if (v_w) {
+                switch (control_mode) {
+                    case HDPCConst::MODE_ROTATION:
+                        // Rotation mode: v_c is the rover body rotation speed in
+                        // rad/s
+                        *v_w = v_c * r;
+                        break;
+                    case HDPCConst::MODE_ACKERMANN:
+                        // Ackermann mode: v_c is the rover center velocity in m/s
+                        *v_w = v_c * sqrt( 1 + (x_w*x_w+y_w*y_w)/r2 - 2*y_w/r );
+                        break;
+                    default:
+                        ROS_ERROR("vel_and_steering called outside of Ackermann or Rotation mode");
+                        *v_w = 0;
+                        break;
+                }
+            }
+        }
+
+        void drive_rover(float velocity, float elevation_rad) {
             hdpc_com::Commands cmd;
-            cmd.header = ros::Time::now();
+            cmd.header.stamp = ros::Time::now();
             for (unsigned int i=0;i<10;i++) {
                 cmd.isActive[i] = true;
             }
+            elevation_rad = remainder(elevation_rad,M_PI);
             switch (control_mode) {
-                case SetControlMode::MODE_STOPPED:
-                case SetControlMode::MODE_DIRECT_DRIVE:
+                case HDPCConst::MODE_STOPPED:
+                case HDPCConst::MODE_DIRECT_DRIVE:
                     ROS_WARN("Ignored drive command in current mode");
                     return;
                     break;
-                case SetControlMode::MODE_ACKERMANN:
+                case HDPCConst::MODE_ACKERMANN:
                     if ((elevation_rad >= 0) && (elevation_rad < elevation_boundary_rad)) {
                         ROS_WARN("Clipped elevation to the minimum possible elevation in ACKERMANN mode");
                         elevation_rad = elevation_boundary_rad;
@@ -77,8 +108,14 @@ class HDPCDrive {
                         ROS_WARN("Clipped elevation to the minimum possible elevation in ACKERMANN mode");
                         elevation_rad = -elevation_boundary_rad;
                     }
+                    if (velocity > max_linear_speed_m_per_s) {
+                        velocity = max_linear_speed_m_per_s;
+                    }
+                    if (velocity <-max_linear_speed_m_per_s) {
+                        velocity = -max_linear_speed_m_per_s;
+                    }
                     break;
-                case SetControlMode::MODE_ROTATION:
+                case HDPCConst::MODE_ROTATION:
                     if ((elevation_rad >= 0) && (elevation_rad >= elevation_boundary_rad)) {
                         ROS_WARN("Clipped elevation to the minimum possible elevation in ROTATION mode");
                         elevation_rad = elevation_boundary_rad;
@@ -87,21 +124,28 @@ class HDPCDrive {
                         ROS_WARN("Clipped elevation to the minimum possible elevation in ROTATION mode");
                         elevation_rad = -elevation_boundary_rad;
                     }
+                    if (velocity > max_rotation_speed_rad_per_s) {
+                        velocity = max_rotation_speed_rad_per_s;
+                    }
+                    if (velocity <-max_rotation_speed_rad_per_s) {
+                        velocity = -max_rotation_speed_rad_per_s;
+                    }
                     break;
                 default:
                     return;
             }
-            // blah blah compute the geometry
-            cmd.command[Status::DRIVE_FRONT_LEFT] = 0;
-            cmd.command[Status::DRIVE_FRONT_RIGHT] = 0;
-            cmd.command[Status::DRIVE_MIDDLE_LEFT] = 0;
-            cmd.command[Status::DRIVE_MIDDLE_RIGHT] = 0;
-            cmd.command[Status::DRIVE_REAR_LEFT] = 0;
-            cmd.command[Status::DRIVE_REAR_RIGHT] = 0;
-            cmd.command[Status::STEERING_FRONT_LEFT] = 0;
-            cmd.command[Status::STEERING_FRONT_RIGHT] = 0;
-            cmd.command[Status::STEERING_REAR_LEFT] = 0;
-            cmd.command[Status::STEERING_REAR_RIGHT] = 0;
+            vel_and_steering(velocity, elevation_rad, rover_center_to_front, rover_width/2.,
+                    &cmd.command[HDPCConst::DRIVE_FRONT_LEFT], &cmd.command[HDPCConst::STEERING_FRONT_LEFT]);
+            vel_and_steering(velocity, elevation_rad, rover_center_to_front, -rover_width/2.,
+                    &cmd.command[HDPCConst::DRIVE_FRONT_RIGHT], &cmd.command[HDPCConst::STEERING_FRONT_RIGHT]);
+            vel_and_steering(velocity, elevation_rad, 0, rover_width/2.,
+                    &cmd.command[HDPCConst::DRIVE_MIDDLE_LEFT]);
+            vel_and_steering(velocity, elevation_rad, 0, -rover_width/2.,
+                    &cmd.command[HDPCConst::DRIVE_MIDDLE_RIGHT]);
+            vel_and_steering(velocity, elevation_rad, -rover_center_to_rear, rover_width/2.,
+                    &cmd.command[HDPCConst::DRIVE_REAR_LEFT], &cmd.command[HDPCConst::STEERING_REAR_LEFT]);
+            vel_and_steering(velocity, elevation_rad, -rover_center_to_rear, -rover_width/2.,
+                    &cmd.command[HDPCConst::DRIVE_REAR_RIGHT], &cmd.command[HDPCConst::STEERING_REAR_RIGHT]);
             command_pub.publish(cmd);
         }
 
@@ -109,18 +153,18 @@ class HDPCDrive {
         {
             hdpc_com::ChangeStateMachine change_state;
             change_state.request.event = EVENT_READ_STATE;
-            if (!state_machine_serv.call(change_state)) {
+            if (!state_machine_client.call(change_state)) {
                 ROS_WARN("Change state machine: request state failed");
                 return false;
             }
             switch (change_state.response.state) {
                 case SM_INIT:
                 case SM_STOP:
-                    if (req.request_mode == SetControlMode::MODE_STOPPED) {
+                    if (req.request_mode == HDPCConst::MODE_STOPPED) {
                         break;
                     }
                     change_state.request.event = EVENT_START;
-                    if (!state_machine_serv.call(change_state)) {
+                    if (!state_machine_client.call(change_state)) {
                         ROS_WARN("Change state machine failed");
                         res.result = false;
                         res.result_mode = control_mode;
@@ -128,11 +172,11 @@ class HDPCDrive {
                     }
                     break;
                 case SM_DRIVE:
-                    if (req.request_mode != SetControlMode::MODE_STOPPED) {
+                    if (req.request_mode != HDPCConst::MODE_STOPPED) {
                         break;
                     }
                     change_state.request.event = EVENT_STOP;
-                    if (!state_machine_serv.call(change_state)) {
+                    if (!state_machine_client.call(change_state)) {
                         ROS_WARN("Change state machine failed");
                         res.result = false;
                         res.result_mode = control_mode;
@@ -147,18 +191,18 @@ class HDPCDrive {
             // If we reach this state we're good. Now we can have the logic 
             // of the transition
             res.result = true;
-            switch (req.control_mode) {
-                case MODE_ACKERMANN:
-                case MODE_ROTATION:
-                    if (control_mode != MODE_STOPPED) {
+            switch (req.request_mode) {
+                case HDPCConst::MODE_ACKERMANN:
+                case HDPCConst::MODE_ROTATION:
+                    if (control_mode != HDPCConst::MODE_STOPPED) {
                         ROS_WARN("Cannot switch to ACKERMANN or ROTATION from any other mode than STOPPED");
                         res.result = false;
                     } else {
                         control_mode = req.request_mode;
                     }
                     break;
-                case MODE_STOPPED:
-                case MODE_DIRECT_DRIVE:
+                case HDPCConst::MODE_STOPPED:
+                case HDPCConst::MODE_DIRECT_DRIVE:
                 default:
                     // authorized from any mode
                     control_mode = req.request_mode;
@@ -171,51 +215,74 @@ class HDPCDrive {
 
         void readingsCallback(const hdpc_com::Readings::ConstPtr & msg) {
             Status sts;
+            sts.header.frame_id = "rover";
+            sts.header.stamp = ros::Time::now();
             sts.control_mode = control_mode;
-            sts.motos = *msg;
+            sts.motors = *msg;
             status_pub.publish(sts);
+            // TODO: create a visualization node
         }
 
         void directDriveCallback(const DirectDrive::ConstPtr& msg)
         {
-            if (control_mode != SetControlMode::MODE_DIRECT_DRIVE) {
+            if (control_mode != HDPCConst::MODE_DIRECT_DRIVE) {
                 ROS_WARN("Ignored direct drive command while not in DIRECT_DRIVE mode");
                 return;
             }
             watchdog = WATCHDOG_INIT;
             hdpc_com::Commands cmd;
-            cmd.header = ros::Time::now();
+            cmd.header.stamp = ros::Time::now();
             for (unsigned int i=0;i<10;i++) {
                 cmd.isActive[i] = true;
             }
-            cmd.command[Status::DRIVE_FRONT_LEFT] = msg.velocities_rad_per_sec[WHEEL_FRONT_LEFT];
-            cmd.command[Status::DRIVE_FRONT_RIGHT] = msg.velocities_rad_per_sec[WHEEL_FRONT_RIGHT];
-            cmd.command[Status::DRIVE_MIDDLE_LEFT] = msg.velocities_rad_per_sec[WHEEL_MIDDLE_LEFT];
-            cmd.command[Status::DRIVE_MIDDLE_RIGHT] = msg.velocities_rad_per_sec[WHEEL_MIDDLE_RIGHT];
-            cmd.command[Status::DRIVE_REAR_LEFT] = msg.velocities_rad_per_sec[WHEEL_REAR_LEFT];
-            cmd.command[Status::DRIVE_REAR_RIGHT] = msg.velocities_rad_per_sec[WHEEL_REAR_RIGHT];
-            cmd.command[Status::STEERING_FRONT_LEFT] = msg.steering_rad[WHEEL_FRONT_LEFT];
-            cmd.command[Status::STEERING_FRONT_RIGHT] = msg.steering_rad[WHEEL_FRONT_RIGHT]; 
-            cmd.command[Status::STEERING_REAR_LEFT] = msg.steering_rad[WHEEL_REAR_LEFT]; 
-            cmd.command[Status::STEERING_REAR_RIGHT] = msg.steering_rad[WHEEL_REAR_RIGHT]; 
+            cmd.command[HDPCConst::DRIVE_FRONT_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_FRONT_LEFT];
+            cmd.command[HDPCConst::DRIVE_FRONT_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_FRONT_RIGHT];
+            cmd.command[HDPCConst::DRIVE_MIDDLE_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_MIDDLE_LEFT];
+            cmd.command[HDPCConst::DRIVE_MIDDLE_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_MIDDLE_RIGHT];
+            cmd.command[HDPCConst::DRIVE_REAR_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_REAR_LEFT];
+            cmd.command[HDPCConst::DRIVE_REAR_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_REAR_RIGHT];
+            cmd.command[HDPCConst::STEERING_FRONT_LEFT] = msg->steering_rad[DirectDrive::WHEEL_FRONT_LEFT];
+            cmd.command[HDPCConst::STEERING_FRONT_RIGHT] = msg->steering_rad[DirectDrive::WHEEL_FRONT_RIGHT]; 
+            cmd.command[HDPCConst::STEERING_REAR_LEFT] = msg->steering_rad[DirectDrive::WHEEL_REAR_LEFT]; 
+            cmd.command[HDPCConst::STEERING_REAR_RIGHT] = msg->steering_rad[DirectDrive::WHEEL_REAR_RIGHT]; 
             command_pub.publish(cmd);
         }
 
         void ackermannCallback(const Ackermann::ConstPtr& msg)
         {
             watchdog = WATCHDOG_INIT;
-            drive_rover(msg.velocity_m_per_sec, msg.elevation_rad);
+            drive_rover(msg->velocity, msg->elevation_rad);
         }
 
     public:
         HDPCDrive(ros::NodeHandle & nh) {
+            command_pub = nh.advertise<hdpc_com::Commands>("/hdpc_com/commands",1);
+            reading_sub = nh.subscribe("/hdpc_com/readings",1,&HDPCDrive::readingsCallback,this);
+            state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/change_state_machine");
+
+
+            control_mode_serv = nh.advertiseService("set_control_mode",&HDPCDrive::set_mode,this);
+            direct_command_sub = nh.subscribe("direct",1,&HDPCDrive::directDriveCallback,this);
+            ackermann_command_sub = nh.subscribe("ackermann",1,&HDPCDrive::ackermannCallback,this);
+            status_pub = nh.advertise<Status>("status",1);
+
+            nh.param("rover_width_m",rover_width,1.0);
+            nh.param("rover_center_to_front_m",rover_center_to_front,0.7);
+            nh.param("rover_center_to_rear_m",rover_center_to_rear,0.7);
+            nh.param("max_rotation_speed_rad_per_s",max_rotation_speed_rad_per_s,1.0);
+            nh.param("max_linear_speed_m_per_s",max_linear_speed_m_per_s,0.9);
+
+            elevation_boundary_rad = atan(rover_width/2);
+
             watchdog = 0;
             stop_rover();
-
-            // create publishers, subscriber, services
-            // read params (rover lengths)
         }
 
+        bool wait_for_services() {
+            state_machine_client.waitForExistence();
+            return true;
+        }
+        
         void main_loop() {
             ros::Rate rate(1);
             while (ros::ok()) {

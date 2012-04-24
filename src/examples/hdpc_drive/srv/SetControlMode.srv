@@ -1,9 +1,4 @@
-uint8 MODE_STOPPED = 0
-uint8 MODE_DIRECT_DRIVE = 1
-# This would make it easier to use from a ROS point of view
-# uint8 MODE_TWIST = 2
-uint8 MODE_ACKERMANN = 3
-uint8 MODE_ROTATION = 4
+# constants defined in HDPCConst.msg
 
 uint8 request_mode
 ---
