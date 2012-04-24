@@ -30,7 +30,7 @@ rosbuild_gensrv()
 rosbuild_add_boost_directories()
 
 # Set path to libcanplusplus/trunk/cmake
-set(CAN++_MODULE_PATH   "../../cmake")
+set(CAN++_MODULE_PATH   "../../../cmake")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CAN++_MODULE_PATH})	
 find_package(CAN++ REQUIRED)
 
