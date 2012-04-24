@@ -81,6 +81,7 @@ bool HDPCStateMachine::srvChangeState(hdpc_com::ChangeStateMachine::Request  &re
 void HDPCStateMachine::commandsCallback(hdpc_com::Commands msg)
 {
 	commands_ = msg;
+	//ROS_INFO("Received message: command[0]: isActive %s, command %lf", (commands_.isActive[0] ? "true": "false"), commands_.command[0]);
 }
 
 void HDPCStateMachine::publishReadings()

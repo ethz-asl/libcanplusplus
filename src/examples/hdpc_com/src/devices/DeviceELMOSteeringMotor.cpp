@@ -69,7 +69,7 @@ bool DeviceELMOSteeringMotor::initDevice()
 //	SDOManager->addSDO(new SDONMTResetNode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 
 
-	printf("NMT: Enter Pre-Operational\n");
+//	printf("NMT: Enter Pre-Operational\n");
 	SDOManager->addSDO(new SDONMTEnterPreOperational(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSetCOBIDSYNC(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x80));
 
@@ -84,7 +84,7 @@ bool DeviceELMOSteeringMotor::initDevice()
 	initMotor();
 
 
-	printf("NMT: Start remote node\n");
+//	printf("NMT: Start remote node\n");
 	SDOManager->addSDO(new SDONMTStartRemoteNode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 
 	return true;

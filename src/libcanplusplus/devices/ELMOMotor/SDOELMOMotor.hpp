@@ -37,7 +37,7 @@ protected:
 			if (inputMsg_->getValue()[0] == 0x80)
 			{
 				///< Check for recData[0]==0x60! recData[0]==0x80 means an error happend
-				printf("\e[0;31mAN ERROR HAPPEND. CAN'T WRITE CHECK CHAP. 12.3 of the firmware specification for the error code: %02X%02X%02X%02X\n\e[0m",inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4]);
+				printf("Warning: Can't write SDO. Error code: %02X%02X%02X%02X\n",inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4]);
 			}
 		}
 	}
@@ -74,7 +74,7 @@ protected:
 			if (inputMsg_->getValue()[0] == 0x80)
 			{
 				///< Check for recData[0]==0x60! recData[0]==0x80 means an error happend
-				printf("\e[0;31mAN ERROR HAPPEND. CAN'T WRITE CHECK CHAP. 12.3 of the firmware specification for the error code: %02X%02X%02X%02X\n\e[0m",inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4]);
+				printf("Warning: Can't write SDO. Error code: %02X%02X%02X%02X\n",inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4]);
 			}
 		}
 

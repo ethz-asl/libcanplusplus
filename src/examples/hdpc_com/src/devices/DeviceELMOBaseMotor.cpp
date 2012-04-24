@@ -16,7 +16,7 @@
 
 
 DeviceELMOBaseMotor::DeviceELMOBaseMotor(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams)
-:Device(nodeId),deviceParams_(deviceParams)
+:Device(nodeId), commandIsActive_(false),commandPosition_(0),deviceParams_(deviceParams)
 {
 	sdoStatusWord_ =  SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	sdoStatusWordDisabled_ = SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));

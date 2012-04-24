@@ -133,7 +133,7 @@ sc::result StHoming::react( const EvExecute& )
 		for (int iDevice=6; iDevice < 10; iDevice++) {
 			DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
 			motor->absCurrentJointPosition_ /= nSamples;
-			ROS_INFO("Device%d: pos=%lf",iDevice,motor->absCurrentJointPosition_);
+			//ROS_INFO("Device%d: pos=%lf",iDevice,motor->absCurrentJointPosition_);
 			const double homeOffsetJointPosition_rad = motor->absCurrentJointPosition_ - motor->getPosition();
 			motor->setHomeOffsetJointPosition(homeOffsetJointPosition_rad);
 			motor->setPositionLimits(motor->getDeviceParams()->positionLimits);
@@ -166,7 +166,19 @@ StStop::StStop( my_context ctx ) :
 	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
 		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
 		motor->setDisableMotor();
+
+		machine.commands_.isActive[iDevice] = true;
+		if (iDevice < 6) {
+			/* driving motors */
+			machine.commands_.command[iDevice] = 0.0;
+		} else {
+			/* steering motors */
+			machine.commands_.command[iDevice] = motor->getPosition();
+		}
 	}
+
+
+
 }
 
 StStop::~StStop() {
@@ -201,6 +213,15 @@ StFault::StFault( my_context ctx ) :
 	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
 		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
 		motor->setDisableMotor();
+
+		machine.commands_.isActive[iDevice] = true;
+		if (iDevice < 6) {
+			/* driving motors */
+			machine.commands_.command[iDevice] = 0.0;
+		} else {
+			/* steering motors */
+			machine.commands_.command[iDevice] = motor->getPosition();
+		}
 	}
 }
 
@@ -264,10 +285,24 @@ StDrive::StDrive( my_context ctx ) :
   my_base( ctx )
 {
 	ROS_INFO("Entering StDrive");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->setEnableMotor();
+		motor->commandIsActive_ = true;
+		motor->commandPosition_ = motor->getPosition();
+	}
 }
 
 StDrive::~StDrive() {
 	ROS_INFO("Exiting StDrive");
+	outermost_context_type & machine = outermost_context();
+	DeviceManager* devices = machine.busManager_->getBus(0)->getDeviceManager();
+	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
+		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
+		motor->setDisableMotor();
+	}
 }
 
 sc::result StDrive::react( const EvExecute& )
@@ -282,6 +317,8 @@ sc::result StDrive::react( const EvExecute& )
 		DeviceELMODrivingMotor* motor =  (DeviceELMODrivingMotor*) devices->getDevice(iDevice);
 		if (machine.commands_.isActive[iDevice]) {
 			motor->setProfileVelocity(machine.commands_.command[iDevice]);
+		} else {
+			motor->setProfileVelocity(0.0);
 		}
 	}
 
@@ -289,8 +326,18 @@ sc::result StDrive::react( const EvExecute& )
 	for (int iDevice=6; iDevice < 10; iDevice++) {
 		DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
 		if (machine.commands_.isActive[iDevice]) {
+			/* send command position */
 			motor->setProfilePosition(machine.commands_.command[iDevice]);
+		} else {
+			/* ROS command is not active */
+			if (motor->commandIsActive_) {
+				/* the last command was active, i.e. store actual position */
+				motor->commandPosition_ = motor->getPosition();
+			}
+			/* send actual position */
+			motor->setProfilePosition(motor->commandPosition_);
 		}
+		motor->commandIsActive_ = machine.commands_.isActive[iDevice];
 	}
 
 	return forward_event();

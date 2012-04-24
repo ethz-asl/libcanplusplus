@@ -94,7 +94,7 @@ struct StStop : sc::state< StStop, StTop >
     typedef mpl::list<
       sc::custom_reaction< EvExecute >,
       sc::custom_reaction< EvStateInfo >,
-      sc::transition<EvStarting, StDriveTestAll>,
+      sc::transition<EvStarting, StDrive>,
 	  sc::transition<EvReseting, StInit>,
 	  sc::custom_reaction<EvStopping>
     > reactions;

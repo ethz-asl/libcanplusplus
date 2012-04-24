@@ -148,6 +148,12 @@ public:
 	 */
 	void setHomeOffsetJointPosition(double homeOffsetJointPosition_rad);
 
+	//! if true motor is active, i.e. it is controlled by ROS commands
+	bool commandIsActive_;
+
+	//! command position that is used if isActive from ROS command is set false
+	double commandPosition_;
+
 protected:
 	//! PDO message to measure position and velocity of the motor
 	TxPDOPositionVelocity* txPDOPositionVelocity_;
