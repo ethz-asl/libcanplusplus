@@ -8,6 +8,4 @@ else (USE_SL_FUNCTIONS)
 add_subdirectory(SingleEPOS2and4poleMotorPThread)
 add_subdirectory(SingleELMOandRE40MotorPThread)
 
-
-
 endif (USE_SL_FUNCTIONS)

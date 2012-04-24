@@ -1,14 +1,11 @@
 cmake_minimum_required(VERSION 2.6)
 
+set(CAN++_MODULE_PATH   "~/libcanplusplus/trunk/cmake")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CAN++_MODULE_PATH})	
+find_package(CAN++ REQUIRED)
 
 include_directories(.
-	${PROJECT_SOURCE_DIR}/include
-	${PROJECT_SOURCE_DIR}/src/libcanplusplus/SL
-	${PROJECT_SOURCE_DIR}/src/libcanplusplus/CANSharedMemory
-	${PROJECT_SOURCE_DIR}/src/libcanplusplus/CANMessage
-	${PROJECT_SOURCE_DIR}/src/libcanplusplus/bus
-	${PROJECT_SOURCE_DIR}/src/libcanplusplus/devices
-	${PROJECT_SOURCE_DIR}/src/libcanplusplus/devices/ELMOMotor
+	${CAN++_INCLUDE_DIRS}
 
 )
 link_directories(${LIBRARY_OUTPUT_PATH})
@@ -19,5 +16,5 @@ set(SRCS
 )
 
 add_executable(singleELMOandRE40MotorPThread ${SRCS})
-target_link_libraries(singleELMOandRE40MotorPThread m bluetooth cpc pthread rt CAN)
+target_link_libraries(singleELMOandRE40MotorPThread ${CAN++_LIBRARIES} cpc)
 

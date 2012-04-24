@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 
-SET(LIBNAME CAN)	 #Name of the library that will be generated
+project(CAN++)
+
+SET(LIBNAME CAN++)	 #Name of the library that will be generated
 
 
 # Set Build Type
@@ -53,3 +55,5 @@ add_subdirectory(devices)
 include_directories(${libCAN_INCL})
 
 add_library(${LIBNAME} STATIC ${libCAN_SRCS})
+
+

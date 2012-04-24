@@ -29,19 +29,13 @@ rosbuild_gensrv()
 
 rosbuild_add_boost_directories()
 
-set(CAN_SOURCE_DIR
- ${PROJECT_SOURCE_DIR}/../../..
-)
-
+# Set path to libcanplusplus/trunk/cmake
+set(CAN++_MODULE_PATH   "../../cmake")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CAN++_MODULE_PATH})	
+find_package(CAN++ REQUIRED)
 
 include_directories(
-	${CAN_SOURCE_DIR}/include
-	${CAN_SOURCE_DIR}/src/libcanplusplus/SL
-	${CAN_SOURCE_DIR}/src/libcanplusplus/CANSharedMemory
-	${CAN_SOURCE_DIR}/src/libcanplusplus/CANMessage
-	${CAN_SOURCE_DIR}/src/libcanplusplus/bus
-	${CAN_SOURCE_DIR}/src/libcanplusplus/devices
-	${CAN_SOURCE_DIR}/src/libcanplusplus/devices/ELMOMotor
+	${CAN++_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/.
 	${PROJECT_SOURCE_DIR}/include
 	${PROJECT_SOURCE_DIR}/src/devices
@@ -49,9 +43,7 @@ include_directories(
 	
 
 )
-link_directories(${CAN_SOURCE_DIR}/lib)
 
-#MESSAGE(STATUS "${LIBRARY_OUTPUT_PATH}")
 set(SRCS
 	./src/hdpc_com_main.cpp
 	./src/devices/DeviceELMOBaseMotor.cpp
@@ -62,4 +54,4 @@ set(SRCS
 )
 
 rosbuild_add_executable(hdpc_com ${SRCS})
-target_link_libraries(hdpc_com CAN m bluetooth cpc pthread rt ) 
+target_link_libraries(hdpc_com ${CAN++_LIBRARIES} cpc ) 
