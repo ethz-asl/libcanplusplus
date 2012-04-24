@@ -41,7 +41,6 @@ include_directories(
 	${PROJECT_SOURCE_DIR}/src/devices
 	${PROJECT_SOURCE_DIR}/src/state_machine
 	
-
 )
 
 set(SRCS
