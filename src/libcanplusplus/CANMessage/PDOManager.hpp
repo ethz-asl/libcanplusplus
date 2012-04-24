@@ -14,7 +14,7 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include "CANOpenMsg.hpp"
 
-//!
+//! Process Data Object (PDO) Manager
 /*!
  * @ingroup robotCAN
  */

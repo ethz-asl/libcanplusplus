@@ -82,9 +82,11 @@ SDOMsg* SDOManager::getSendSDO()
 	}
 	SDOMsg* firstSDO = getFirstSDO();
 	if (firstSDO->getIsSent() && firstSDO->getIsReceived()) {
+		/* the first SDO message was setn and received */
 		sdos_.pop_front();
 	}
 	if (getSize() == 0) {
+		/* the SDO list is empty */
 		return emptySDO_;
 	}
 	return getFirstSDO();
@@ -93,6 +95,7 @@ SDOMsg* SDOManager::getSendSDO()
 SDOMsg* SDOManager::getReceiveSDO()
 {
 	if (getSize() == 0) {
+		/* the SDO list is empty */
 		return emptySDO_;
 	}
 	if (getFirstSDO()->hasTimeOut()) {

@@ -1,13 +1,15 @@
-/*
- * CAN.h
- *
- *  Created on: Mar 16, 2012
- *      Author: starleth
- */
+/*!
+* @file 	CANPThread.h
+* @author 	Christian Gehring
+* @date		Mar 16, 2012
+* @version 	0.0
+* @ingroup  robotCAN
+* @brief	Includes all header files that are required to use the CAN library with PThread.
+*/
 
-#ifndef CAN_H_
-#define CAN_H_
 
+#ifndef CANPTHREAD_H_
+#define CANPTHREAD_H_
 
 
 /* Shared Memory */
@@ -18,4 +20,4 @@
 #include "PThreadHeaders.hpp"
 #include "BusManager.hpp"
 
-#endif /* CAN_H_ */
+#endif /* CANPTHREAD_H_ */
