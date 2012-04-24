@@ -5,7 +5,6 @@ uint8 MODE_DIRECT_DRIVE = 1
 uint8 MODE_ACKERMANN = 3
 uint8 MODE_ROTATION = 4
 
-#warning: values are probably wrong
 uint8 DRIVE_FRONT_LEFT = 0
 uint8 DRIVE_FRONT_RIGHT = 1
 uint8 DRIVE_MIDDLE_LEFT = 2

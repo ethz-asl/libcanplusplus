@@ -7,7 +7,7 @@
  * @ingroup robotCAN
  *
  */
-#include "HDPCStateMachineEnums.h"
+#include "hdpc_com/HDPCStateMachineEnums.h"
 #include "HDPCStateMachine.hpp"
 
 #include "DeviceELMOBaseMotor.hpp"

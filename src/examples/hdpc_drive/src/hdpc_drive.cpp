@@ -11,15 +11,14 @@
 #include <hdpc_com/ChangeStateMachine.h>
 #include <hdpc_com/Commands.h>
 #include <hdpc_com/Readings.h>
-#include <HDPCStateMachineEnums.h>
+#include <hdpc_com/HDPCStateMachineEnums.h>
+#include <hdpc_com/HDPCGeometry.h>
 
 using namespace hdpc_drive;
 
 class HDPCDrive {
     protected:
-        double rover_center_to_front;
-        double rover_center_to_rear;
-        double rover_width;
+        hdpc_com::HDPCGeometry geom;
 
         // Transition value between rotation on the spot and ackermann
         double elevation_boundary_rad;
@@ -134,17 +133,17 @@ class HDPCDrive {
                 default:
                     return;
             }
-            vel_and_steering(velocity, elevation_rad, rover_center_to_front, rover_width/2.,
+            vel_and_steering(velocity, elevation_rad, geom.rover_center_to_front, geom.rover_width/2.,
                     &cmd.command[HDPCConst::DRIVE_FRONT_LEFT], &cmd.command[HDPCConst::STEERING_FRONT_LEFT]);
-            vel_and_steering(velocity, elevation_rad, rover_center_to_front, -rover_width/2.,
+            vel_and_steering(velocity, elevation_rad, geom.rover_center_to_front, -geom.rover_width/2.,
                     &cmd.command[HDPCConst::DRIVE_FRONT_RIGHT], &cmd.command[HDPCConst::STEERING_FRONT_RIGHT]);
-            vel_and_steering(velocity, elevation_rad, 0, rover_width/2.,
+            vel_and_steering(velocity, elevation_rad, 0, geom.rover_width/2.,
                     &cmd.command[HDPCConst::DRIVE_MIDDLE_LEFT]);
-            vel_and_steering(velocity, elevation_rad, 0, -rover_width/2.,
+            vel_and_steering(velocity, elevation_rad, 0, -geom.rover_width/2.,
                     &cmd.command[HDPCConst::DRIVE_MIDDLE_RIGHT]);
-            vel_and_steering(velocity, elevation_rad, -rover_center_to_rear, rover_width/2.,
+            vel_and_steering(velocity, elevation_rad, -geom.rover_center_to_rear, geom.rover_width/2.,
                     &cmd.command[HDPCConst::DRIVE_REAR_LEFT], &cmd.command[HDPCConst::STEERING_REAR_LEFT]);
-            vel_and_steering(velocity, elevation_rad, -rover_center_to_rear, -rover_width/2.,
+            vel_and_steering(velocity, elevation_rad, -geom.rover_center_to_rear, -geom.rover_width/2.,
                     &cmd.command[HDPCConst::DRIVE_REAR_RIGHT], &cmd.command[HDPCConst::STEERING_REAR_RIGHT]);
             command_pub.publish(cmd);
         }
@@ -255,7 +254,7 @@ class HDPCDrive {
         }
 
     public:
-        HDPCDrive(ros::NodeHandle & nh) {
+        HDPCDrive(ros::NodeHandle & nh) : geom(nh) {
             command_pub = nh.advertise<hdpc_com::Commands>("/hdpc_com/commands",1);
             reading_sub = nh.subscribe("/hdpc_com/readings",1,&HDPCDrive::readingsCallback,this);
             state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/change_state_machine");
@@ -266,13 +265,10 @@ class HDPCDrive {
             ackermann_command_sub = nh.subscribe("ackermann",1,&HDPCDrive::ackermannCallback,this);
             status_pub = nh.advertise<Status>("status",1);
 
-            nh.param("rover_width_m",rover_width,1.0);
-            nh.param("rover_center_to_front_m",rover_center_to_front,0.7);
-            nh.param("rover_center_to_rear_m",rover_center_to_rear,0.7);
             nh.param("max_rotation_speed_rad_per_s",max_rotation_speed_rad_per_s,1.0);
             nh.param("max_linear_speed_m_per_s",max_linear_speed_m_per_s,0.9);
 
-            elevation_boundary_rad = atan(rover_width/2);
+            elevation_boundary_rad = atan(geom.rover_width/2);
 
             watchdog = 0;
             stop_rover();
@@ -305,6 +301,8 @@ int main(int argc, char *argv[]) {
     ros::NodeHandle nh("~");
 
     HDPCDrive driver(nh);
+
+    driver.wait_for_services();
 
     driver.main_loop();
 

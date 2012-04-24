@@ -11,12 +11,13 @@
 #ifndef HDPCSTATEMACHINE_HPP_
 #define HDPCSTATEMACHINE_HPP_
 
-#include "HDPCStateMachineEnums.h"
 
 #include "ros/ros.h"
+#include "hdpc_com/HDPCStateMachineEnums.h"
 #include "hdpc_com/ChangeStateMachine.h"
 #include "hdpc_com/Commands.h"
 #include "hdpc_com/Readings.h"
+#include "hdpc_com/HDPCConst.h"
 
 
 #include <boost/statechart/event.hpp>

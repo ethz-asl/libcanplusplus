@@ -253,9 +253,12 @@ int main(int argc, char** argv)
 	stateMachine.initROS();
 	stateMachine.initiate();
 
-	int rc = pthread_create(&bus_task, NULL, bus_routine, (void *) &busRoutineArgs[0]);
-    assert(0 == rc);
-
+	int rc = 0;
+    rc = pthread_create(&bus_task, NULL, bus_routine, (void *) &busRoutineArgs[0]);
+    if (rc) {
+        ROS_ERROR("Error while create bus_routine thread");
+        return -1;
+    }
 
 	ros::Rate loop_rate(motor_servo_rate);
 	while (ros::ok()) {
