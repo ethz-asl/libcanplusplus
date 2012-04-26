@@ -56,4 +56,8 @@ include_directories(${libCAN_INCL})
 
 add_library(${LIBNAME} STATIC ${libCAN_SRCS})
 
+if (USE_SL_FUNCTIONS)
+	install (TARGETS ${LIBNAME} DESTINATION $ENV{LAB_ROOT}/lib/$ENV{MACHTYPE})
+endif (USE_SL_FUNCTIONS)
+
 
