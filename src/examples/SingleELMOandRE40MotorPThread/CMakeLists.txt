@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-set(CAN++_MODULE_PATH   "${PATH_TO_LIBRARY}/cmake")
+set(CAN++_MODULE_PATH   ${ABS_PATH_TO_CMAKE_FOLDER})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CAN++_MODULE_PATH})	
 find_package(CAN++ REQUIRED)
 

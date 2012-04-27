@@ -1,14 +1,11 @@
 ################################################################
-## CAN Library												  ##
+## CAN++ Library			   		      ##
 ################################################################
 Author: Christian Gehring
 Date: Mar 16, 2012
 
 
-
-
-
-/*! @mainpage libCAN
+/*! @mainpage libCAN++
 
 	This library provides an interface to send and receive PDO and 
 	SDO CAN messages on several CAN buses.
@@ -44,11 +41,18 @@ Date: Mar 16, 2012
 	With SL:
 	cd build
 	cmake .. -DUSE_SL_FUNCTIONS=ON
-	make
+	make install
+	
+	Note that this will copy the library to $LAB_ROOT/lib/$MACHTYPE.
 	
 	With Xenomai:
 	Run cmake with: cmake .. -DCOMPILE_XENOMAI=ON
     
+	Build examples:
+	cmake .. -DCOMPILE_EXAMPLES=ON -DABS_PATH_TO_CMAKE_FOLDER=~/libcanplusplus/trunk/cmake
+	make
+
+	The executables are copied to the folder bin.
     
 */
 
@@ -78,4 +82,5 @@ Date: Mar 16, 2012
     
     
 */
+
 

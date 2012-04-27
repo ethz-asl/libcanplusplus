@@ -9,8 +9,8 @@ set(libCAN_INCL
 
 OPTION(COMPILE_XENOMAI "Turn on to compile with xenomai libraries" OFF )
 OPTION(USE_SL_FUNCTIONS "Turn on if it is used within SL" OFF )
-OPTION(COMPILE_EXAMPLES "Turn on to compile examples" ON )
-OPTION(PATH_TO_LIBRARY "Turn on to compile examples" "~/libcanplusplus/trunk" )
+OPTION(COMPILE_EXAMPLES "Turn on to compile examples" OFF )
+OPTION(ABS_PATH_TO_CMAKE_FOLDER "Define the path to the folder of this file, such that the examples will find the file cmake/FindCAN++.cmake" "~/libcanplusplus/trunk/cmake" )
 
 ####################
 ## SUBDIRECTORIES ##
