@@ -37,7 +37,7 @@ class HDPCDrive {
         ros::Publisher status_pub;
 
         unsigned int control_mode;
-        static const unsigned int WATCHDOG_INIT = 100;
+        static const unsigned int WATCHDOG_INIT = 1000;
         unsigned int watchdog;
 
         void stop_rover() {
@@ -58,7 +58,11 @@ class HDPCDrive {
             state_machine_client.call(change_state);
 
             control_mode = HDPCConst::MODE_STOPPED;
-            ROS_INFO("Rover entered STOPPED mode");
+            if (watchdog == 0) {
+                ROS_INFO("Rover entered STOPPED mode on watchdog");
+            } else {
+                ROS_INFO("Rover entered STOPPED mode on watchdog");
+            }
         }
 
         void vel_and_steering(float v_c, float elev, float x_w, float y_w, float *v_w, float *steering_w=NULL) {
@@ -191,25 +195,30 @@ class HDPCDrive {
             // If we reach this state we're good. Now we can have the logic 
             // of the transition
             res.result = true;
-            switch (req.request_mode) {
-                case HDPCConst::MODE_ACKERMANN:
-                case HDPCConst::MODE_ROTATION:
-                    if (control_mode != HDPCConst::MODE_STOPPED) {
-                        ROS_WARN("Cannot switch to ACKERMANN or ROTATION from any other mode than STOPPED");
-                        res.result = false;
-                    } else {
+            if (control_mode != req.request_mode) {
+                switch (req.request_mode) {
+                    case HDPCConst::MODE_ACKERMANN:
+                    case HDPCConst::MODE_ROTATION:
+                        if (control_mode != HDPCConst::MODE_STOPPED) {
+                            ROS_WARN("Cannot switch to ACKERMANN or ROTATION from any other mode than STOPPED");
+                            res.result = false;
+                        } else {
+                            control_mode = req.request_mode;
+                        }
+                        break;
+                    case HDPCConst::MODE_STOPPED:
+                    case HDPCConst::MODE_DIRECT_DRIVE:
+                    default:
+                        // authorized from any mode
                         control_mode = req.request_mode;
-                    }
-                    break;
-                case HDPCConst::MODE_STOPPED:
-                case HDPCConst::MODE_DIRECT_DRIVE:
-                default:
-                    // authorized from any mode
-                    control_mode = req.request_mode;
-                    break;
+                        break;
+                }
+            } else {
+                ROS_INFO("Ignoring transition request to the current mode");
             }
             watchdog = WATCHDOG_INIT;
             res.result_mode = control_mode;
+            ROS_INFO("Rover set mode successful: %d",control_mode);
             return true;
         }
 
@@ -250,6 +259,14 @@ class HDPCDrive {
 
         void ackermannCallback(const Ackermann::ConstPtr& msg)
         {
+            if ((control_mode != HDPCConst::MODE_ACKERMANN) && 
+                    (control_mode != HDPCConst::MODE_ROTATION)) {
+                ROS_WARN("Ignored Ackermann command while not in Ackermann/Rotation mode");
+                return;
+            } else {
+                fprintf(stdout,".");
+                fflush(stdout);
+            }
             watchdog = WATCHDOG_INIT;
             drive_rover(msg->velocity, msg->elevation_rad);
         }
@@ -277,7 +294,7 @@ class HDPCDrive {
 
         bool wait_for_services() {
             state_machine_client.waitForExistence();
-	    ROS_INFO("State machine service is ready");
+            ROS_INFO("State machine service is ready");
             return true;
         }
         

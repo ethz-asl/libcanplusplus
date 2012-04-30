@@ -1,6 +1,10 @@
 <launch>
     <!-- We're not setting the parameter here. It is expected that the drive node will have set them up correctly-->
 
+    <node type="joy_node" pkg="joy" name="joy" output="screen">
+        <param name="autorepeat_rate" value="10"/>
+    </node>
+
     <node type="hdpc_teleop" pkg="hdpc_teleop" name="hdpc_teleop" output="screen">
         <param name="max_rotational_velocity" value="0.5" />
         <param name="max_linear_velocity" value="0.5" />

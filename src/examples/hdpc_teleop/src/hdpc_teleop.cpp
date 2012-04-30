@@ -6,7 +6,7 @@
 #include <assert.h>
 
 #include <ros/ros.h>
-#include <joy/Joy.h>
+#include <sensor_msgs/Joy.h>
 
 #include <hdpc_drive/SetControlMode.h>
 #include <hdpc_drive/Status.h>
@@ -21,7 +21,7 @@ using namespace hdpc_drive;
 class HDPCController
 {
 	protected:
-		joy::Joy joystate;
+		sensor_msgs::Joy joystate;
 		hdpc_drive::Status state;
 		ros::Subscriber state_sub;
 		ros::Subscriber joy_sub;
@@ -66,7 +66,7 @@ class HDPCController
 			state = *msg;
 		}
 
-		void joyCallback(const joy::Joy::ConstPtr& msg) {
+		void joyCallback(const sensor_msgs::Joy::ConstPtr& msg) {
 			assert(msg->buttons.size()>4);
 			assert(msg->axes.size()>=2);
 			joystate = *msg;
@@ -93,6 +93,7 @@ class HDPCController
         void joyctrl() {
             ros::Rate looprate(10);
             int current_axle = 0;
+            int prev_control_mode = -1;
             double rotation_elevation = 0.0;
 
             while (ros::ok()) {
@@ -101,6 +102,10 @@ class HDPCController
                 if (!gotjoy) continue;
                 switch (state.control_mode) {
                     case HDPCConst::MODE_STOPPED:
+                        if (prev_control_mode != state.control_mode) {
+                            ROS_INFO("Entered in mode STOPPED");
+                            prev_control_mode = state.control_mode;
+                        }
                         if (joystate.buttons[1]) {
                             set_control_mode(HDPCConst::MODE_ACKERMANN);
                             ROS_INFO("Entering Ackermann mode.");
@@ -120,6 +125,10 @@ class HDPCController
                         }
                         break;
                     case HDPCConst::MODE_DIRECT_DRIVE:
+                        if (prev_control_mode != state.control_mode) {
+                            ROS_INFO("Entered in mode DIRECT DRIVE");
+                            prev_control_mode = state.control_mode;
+                        }
                         if (joystate.buttons[0]) {
                             // Stop
                             set_control_mode(HDPCConst::MODE_STOPPED);
@@ -137,6 +146,10 @@ class HDPCController
                         }
                         break;
                     case HDPCConst::MODE_ACKERMANN:
+                        if (prev_control_mode != state.control_mode) {
+                            ROS_INFO("Entered in mode ACKERMANN");
+                            prev_control_mode = state.control_mode;
+                        }
                         if (joystate.buttons[0]) {
                             // Stop
                             set_control_mode(HDPCConst::MODE_STOPPED);
@@ -158,6 +171,10 @@ class HDPCController
                         }
                         break;
                     case HDPCConst::MODE_ROTATION:
+                        if (prev_control_mode != state.control_mode) {
+                            ROS_INFO("Entered in mode ROTATION");
+                            prev_control_mode = state.control_mode;
+                        }
                         if (joystate.buttons[0]) {
                             // Stop
                             set_control_mode(HDPCConst::MODE_STOPPED);
