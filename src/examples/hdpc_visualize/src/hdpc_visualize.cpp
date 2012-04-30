@@ -71,7 +71,7 @@ class HDPCVisualize {
                     msg->header.stamp,"FLAxle","FLWheel");
 
 
-            sendtf(0,geom.rover_width/2,0,
+            sendtf(0,-geom.rover_width/2,0,
                     0,msg->motors.analog[HDPCConst::DRIVE_MIDDLE_RIGHT],0, 
                     msg->header.stamp,"body","RightRocker");
             sendtf(geom.rover_rocker_to_front_axle,0,-(geom.rover_rocker_to_boggie_z+geom.rover_boggie_to_axle_z),
@@ -127,7 +127,7 @@ class HDPCVisualize {
             mk.color.b = 0.7;
             mk.color.a = 0.5;
             mk.points.resize(3);
-            mk.points[0].x = geom.rover_rocker_to_boggie_x;
+            mk.points[0].x = -geom.rover_rocker_to_boggie_x;
             mk.points[0].y = 0.0;
             mk.points[0].z = -geom.rover_rocker_to_boggie_z;
             mk.points[1].x = 0.0;
