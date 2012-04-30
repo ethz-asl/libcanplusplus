@@ -92,13 +92,15 @@ class HDPCController
 
         void joyctrl() {
             ros::Rate looprate(10);
-            int current_axle = 0;
+            unsigned int current_axle = 0;
             int prev_control_mode = -1;
             double rotation_elevation = 0.0;
+	    double tnow,last_dd_cmd = -1;
 
             while (ros::ok()) {
                 looprate.sleep();
                 ros::spinOnce();
+		tnow = ros::Time::now().toSec();
                 if (!gotjoy) continue;
                 switch (state.control_mode) {
                     case HDPCConst::MODE_STOPPED:
@@ -107,6 +109,7 @@ class HDPCController
                             prev_control_mode = state.control_mode;
                         }
                         if (joystate.buttons[1]) {
+                            rotation_elevation = M_PI/2;
                             set_control_mode(HDPCConst::MODE_ACKERMANN);
                             ROS_INFO("Entering Ackermann mode.");
                             ROS_INFO("Press 0 to exit. Velocity: Axis 0. Steering: Axis 1");
@@ -118,6 +121,7 @@ class HDPCController
                             ROS_INFO("ICR Positon: [-/0/+] wiht button [3/2/4]");
                         } else if (joystate.buttons[3]) {
                             ddmsg = hdpc_drive::DirectDrive();
+			    last_dd_cmd = -1;
                             current_axle = 0;
                             set_control_mode(HDPCConst::MODE_DIRECT_DRIVE);
                             ROS_INFO("Entering Direct Drive mode.");
@@ -133,16 +137,18 @@ class HDPCController
                             // Stop
                             set_control_mode(HDPCConst::MODE_STOPPED);
                             ROS_INFO("Leaving DirectDrive mode");
-                        } else if (joystate.buttons[3]) {
+                        } else if (joystate.buttons[3] && (tnow - last_dd_cmd > 0.5)) {
                             setdd(ddmsg,current_axle,0.0);
                             current_axle = (current_axle - 1) % 10;
+			    last_dd_cmd = tnow;
                             ROS_INFO("DirectDrive: controlling DoF %d",current_axle);
-                        } else if (joystate.buttons[4]) {
+                        } else if (joystate.buttons[4] && (tnow - last_dd_cmd > 0.5)) {
                             setdd(ddmsg,current_axle,0.0);
                             current_axle = (current_axle + 1) % 10;
+			    last_dd_cmd = tnow;
                             ROS_INFO("DirectDrive: controlling DoF %d",current_axle);
                         } else {
-                            setdd(ddmsg,current_axle,joystate.axes[0]);
+                            setdd(ddmsg,current_axle,joystate.axes[1]);
                         }
                         break;
                     case HDPCConst::MODE_ACKERMANN:
@@ -157,16 +163,16 @@ class HDPCController
                         } else {
                             hdpc_drive::Ackermann msg;
                             // rotation speed in [-0.5,0.5] m/s
-                            msg.velocity = joystate.axes[0] * max_linear_velocity; 
-                            if (fabs(msg.velocity) < 0.05) {
-                                // dead zone at the center
-                                msg.velocity = 0.0;
+                            msg.velocity = joystate.axes[1] * max_linear_velocity; 
+                            if (joystate.buttons[3]) {
+                                rotation_elevation -= 0.05;
+                            } else if (joystate.buttons[4]) {
+                                rotation_elevation += 0.05;
+                            } else if (joystate.buttons[2]) {
+                                rotation_elevation = M_PI/2;
                             }
-                            msg.elevation_rad = M_PI/2 - joystate.axes[1] * (M_PI/2 - elevation_boundary_rad);
-                            if (fabs(msg.elevation_rad-M_PI/2) < 0.1) {
-                                // dead zone at the center
-                                msg.elevation_rad = M_PI/2;
-                            }
+			    rotation_elevation = remainder(rotation_elevation, M_PI);
+                            msg.elevation_rad = rotation_elevation;
                             control_pub.publish(msg);
                         }
                         break;
@@ -182,18 +188,18 @@ class HDPCController
                         } else {
                             hdpc_drive::Ackermann msg;
                             // rotation speed in [-1,1] rad/s
-                            msg.velocity = joystate.axes[1] * max_rotational_velocity; 
+                            msg.velocity = -joystate.axes[0] * max_rotational_velocity; 
                             if (fabs(msg.velocity) < 0.1) {
                                 // dead zone at the center
                                 msg.velocity = 0.0;
                             }
                             if (joystate.buttons[3]) {
-                                rotation_elevation += 0.1 * elevation_boundary_rad;
+                                rotation_elevation += 0.05;
                                 if (rotation_elevation > elevation_boundary_rad) {
                                     rotation_elevation = elevation_boundary_rad;
                                 }
                             } else if (joystate.buttons[4]) {
-                                rotation_elevation -= 0.1 * elevation_boundary_rad;
+                                rotation_elevation -= 0.05;
                                 if (rotation_elevation < -elevation_boundary_rad) {
                                     rotation_elevation = -elevation_boundary_rad;
                                 }

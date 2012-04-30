@@ -76,7 +76,7 @@ class HDPCDrive {
                     case HDPCConst::MODE_ROTATION:
                         // Rotation mode: v_c is the rover body rotation speed in
                         // rad/s
-                        *v_w = v_c * r;
+                        *v_w = v_c * hypot(x_w,r-y_w) * ((y_w>0)?+1:-1);
                         break;
                     case HDPCConst::MODE_ACKERMANN:
                         // Ackermann mode: v_c is the rover center velocity in m/s
@@ -263,9 +263,6 @@ class HDPCDrive {
                     (control_mode != HDPCConst::MODE_ROTATION)) {
                 ROS_WARN("Ignored Ackermann command while not in Ackermann/Rotation mode");
                 return;
-            } else {
-                fprintf(stdout,".");
-                fflush(stdout);
             }
             watchdog = WATCHDOG_INIT;
             drive_rover(msg->velocity, msg->elevation_rad);
