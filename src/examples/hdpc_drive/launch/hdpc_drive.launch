@@ -21,8 +21,6 @@
     </node>
 
     <node type="hdpc_visualize" pkg="hdpc_visualize" name="hdpc_visualize" output="screen">
-        <param name="max_rotation_speed_rad_per_s" value="1.0" />
-        <param name="max_linear_speed_m_per_s" value="0.9" />
     </node>
 
     

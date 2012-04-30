@@ -48,7 +48,7 @@ const int nBuses = 1;
 
 
 //! cycle rate of loop in millisec
-const double time_step_ms = 10;//2.5;
+const double time_step_ms = 25;//2.5;
 
 //! bus rate
 int motor_servo_rate = (int) 1000.0/time_step_ms;
