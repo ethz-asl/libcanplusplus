@@ -12,6 +12,7 @@
 # By default this script does nothing.
 
 ifup eth0
+ifconfig eth0
 
-su -l -c "screen -dmS hdpc -t hdpc -O /home/hdpc/launch_hdpc.sh" hdpc
+su -l -c /home/hdpc/launch_hdpc.sh hdpc
 exit 0
