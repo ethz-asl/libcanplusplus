@@ -11,11 +11,13 @@ namespace hdpc_com {
         double rover_rocker_to_front_axle;
         double rover_rocker_to_boggie_x;
         double rover_wheel_radius;
+        double rover_wheel_width;
         double rover_rocker_to_boggie_z;
         double rover_boggie_to_axle_z;
         double rover_boggie_to_rear_axle;
         double rover_boggie_to_middle_axle;
 
+        double rover_max_steering_velocity;
 
         HDPCGeometry(ros::NodeHandle & nh) {
             nh.param("/rover_height",rover_height,0.577);
@@ -25,10 +27,12 @@ namespace hdpc_com {
             nh.param("/rover_rocker_to_front_axle",rover_rocker_to_front_axle,rover_center_to_front);
             nh.param("/rover_rocker_to_boggie_x",rover_rocker_to_boggie_x,0.375);
             nh.param("/rover_wheel_radius",rover_wheel_radius,0.250/2.);
+            nh.param("/rover_wheel_width",rover_wheel_width,0.250);
             nh.param("/rover_rocker_to_boggie_z",rover_rocker_to_boggie_z,rover_height - 0.317);
             nh.param("/rover_boggie_to_axle_z",rover_boggie_to_axle_z,0.317-rover_wheel_radius);
             nh.param("/rover_boggie_to_rear_axle",rover_boggie_to_rear_axle,0.375);
             nh.param("/rover_boggie_to_middle_axle",rover_boggie_to_middle_axle,0.375);
+            nh.param("/rover_max_steering_velocity",rover_max_steering_velocity,0.28);
         }
     };
 };

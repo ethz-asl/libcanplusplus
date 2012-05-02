@@ -168,13 +168,8 @@ StStop::StStop( my_context ctx ) :
 		motor->setDisableMotor();
 
 		machine.commands_.isActive[iDevice] = true;
-		if (iDevice < 6) {
-			/* driving motors */
-			machine.commands_.command[iDevice] = 0.0;
-		} else {
-			/* steering motors */
-			machine.commands_.command[iDevice] = motor->getPosition();
-		}
+        machine.commands_.velocity[iDevice] = 0.0;
+        machine.commands_.position[iDevice] = motor->getPosition();
 	}
 
 
@@ -215,13 +210,8 @@ StFault::StFault( my_context ctx ) :
 		motor->setDisableMotor();
 
 		machine.commands_.isActive[iDevice] = true;
-		if (iDevice < 6) {
-			/* driving motors */
-			machine.commands_.command[iDevice] = 0.0;
-		} else {
-			/* steering motors */
-			machine.commands_.command[iDevice] = motor->getPosition();
-		}
+        machine.commands_.velocity[iDevice] = 0.0;
+        machine.commands_.position[iDevice] = motor->getPosition();
 	}
 }
 
@@ -316,7 +306,7 @@ sc::result StDrive::react( const EvExecute& )
 	for (int iDevice=0; iDevice < 6; iDevice++) {
 		DeviceELMODrivingMotor* motor =  (DeviceELMODrivingMotor*) devices->getDevice(iDevice);
 		if (machine.commands_.isActive[iDevice]) {
-			motor->setProfileVelocity(machine.commands_.command[iDevice]);
+			motor->setProfileVelocity(machine.commands_.velocity[iDevice]);
 		} else {
 			motor->setProfileVelocity(0.0);
 		}
@@ -327,7 +317,14 @@ sc::result StDrive::react( const EvExecute& )
 		DeviceELMOSteeringMotor* motor =  (DeviceELMOSteeringMotor*) devices->getDevice(iDevice);
 		if (machine.commands_.isActive[iDevice]) {
 			/* send command position */
-			motor->setProfilePosition(machine.commands_.command[iDevice]);
+            if (machine.commands_.velocity[iDevice] == 0.0) {
+                // Set position without velocity profile
+                motor->setProfilePosition(machine.commands_.position[iDevice]);
+            } else {
+                // Set position with velocity profile
+#warning Position with velocity is not implemented
+                motor->setProfilePosition(machine.commands_.position[iDevice]);
+            }
 		} else {
 			/* ROS command is not active */
 			if (motor->commandIsActive_) {

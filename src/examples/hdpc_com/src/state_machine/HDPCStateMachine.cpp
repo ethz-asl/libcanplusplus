@@ -17,9 +17,10 @@
 HDPCStateMachine::HDPCStateMachine(BusManager* busManager):busManager_(busManager)
 {
 
-	for (unsigned int iDevice=0; iDevice < commands_.command.size(); iDevice++) {
+	for (unsigned int iDevice=0; iDevice < commands_.isActive.size(); iDevice++) {
 		commands_.isActive[iDevice] = false;
-		commands_.command[iDevice] = 0.0;
+		commands_.velocity[iDevice] = 0.0;
+		commands_.position[iDevice] = 0.0;
 	}
 }
 

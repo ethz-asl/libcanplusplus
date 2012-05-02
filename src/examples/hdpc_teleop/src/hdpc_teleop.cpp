@@ -7,10 +7,10 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
+#include <geometry_msgs/Twist.h>
 
 #include <hdpc_drive/SetControlMode.h>
 #include <hdpc_drive/Status.h>
-#include <hdpc_drive/Ackermann.h>
 #include <hdpc_drive/DirectDrive.h>
 #include <hdpc_com/HDPCGeometry.h>
 #include <hdpc_com/HDPCConst.h>
@@ -20,14 +20,14 @@ using namespace hdpc_drive;
 
 class HDPCController
 {
-	protected:
-		sensor_msgs::Joy joystate;
-		hdpc_drive::Status state;
-		ros::Subscriber state_sub;
-		ros::Subscriber joy_sub;
-		ros::Publisher control_pub;
-		ros::Publisher directdrive_pub;
-		ros::ServiceClient setModeClt;
+    protected:
+        sensor_msgs::Joy joystate;
+        hdpc_drive::Status state;
+        ros::Subscriber state_sub;
+        ros::Subscriber joy_sub;
+        ros::Publisher control_pub;
+        ros::Publisher directdrive_pub;
+        ros::ServiceClient setModeClt;
 
         hdpc_com::HDPCGeometry geom;
         hdpc_drive::DirectDrive ddmsg;
@@ -35,10 +35,10 @@ class HDPCController
         double max_linear_velocity;
         double max_rotational_velocity;
 
-		bool firstctrl,gotjoy;
-	public:
-		HDPCController(ros::NodeHandle & nh) : geom(nh) {
-			firstctrl = true;
+        bool firstctrl,gotjoy;
+    public:
+        HDPCController(ros::NodeHandle & nh) : geom(nh) {
+            firstctrl = true;
             gotjoy = false;
             joystate.buttons.resize(12);
             joystate.axes.resize(12);
@@ -47,31 +47,31 @@ class HDPCController
             nh.param("max_linear_velocity",max_linear_velocity,0.5);
             nh.param("max_rotational_velocity",max_rotational_velocity,0.5);
 
-			setModeClt = nh.serviceClient<hdpc_drive::SetControlMode>("/hdpc_drive/set_control_mode");
+            setModeClt = nh.serviceClient<hdpc_drive::SetControlMode>("/hdpc_drive/set_control_mode");
 
-			// Subscribe to the state
-			state_sub = nh.subscribe("/hdpc_drive/status",1,&HDPCController::stateCallback, this);
-			// Publishing the control
-			control_pub = nh.advertise<hdpc_drive::Ackermann>("/hdpc_drive/ackermann",1);
-			directdrive_pub = nh.advertise<hdpc_drive::DirectDrive>("/hdpc_drive/direct",1);
+            // Subscribe to the state
+            state_sub = nh.subscribe("/hdpc_drive/status",1,&HDPCController::stateCallback, this);
+            // Publishing the control
+            control_pub = nh.advertise<geometry_msgs::Twist>("/hdpc_drive/ackermann",1);
+            directdrive_pub = nh.advertise<hdpc_drive::DirectDrive>("/hdpc_drive/direct",1);
 
-			joy_sub = nh.subscribe("/joy",1,&HDPCController::joyCallback, this);
+            joy_sub = nh.subscribe("/joy",1,&HDPCController::joyCallback, this);
 
             ROS_INFO("HDPC Teleop initialised and ready to roll!");
-		}
-		~HDPCController() {
-		}
+        }
+        ~HDPCController() {
+        }
 
-		void stateCallback(const hdpc_drive::Status::ConstPtr& msg) {
-			state = *msg;
-		}
+        void stateCallback(const hdpc_drive::Status::ConstPtr& msg) {
+            state = *msg;
+        }
 
-		void joyCallback(const sensor_msgs::Joy::ConstPtr& msg) {
-			assert(msg->buttons.size()>4);
-			assert(msg->axes.size()>=2);
-			joystate = *msg;
+        void joyCallback(const sensor_msgs::Joy::ConstPtr& msg) {
+            assert(msg->buttons.size()>4);
+            assert(msg->axes.size()>=2);
+            joystate = *msg;
             gotjoy = true;
-		}
+        }
 
         void set_control_mode(unsigned int mode) {
             hdpc_drive::SetControlMode req;
@@ -95,12 +95,12 @@ class HDPCController
             unsigned int current_axle = 0;
             int prev_control_mode = -1;
             double rotation_elevation = 0.0;
-	    double tnow,last_dd_cmd = -1;
+            double tnow,last_dd_cmd = -1;
 
             while (ros::ok()) {
                 looprate.sleep();
                 ros::spinOnce();
-		tnow = ros::Time::now().toSec();
+                tnow = ros::Time::now().toSec();
                 if (!gotjoy) continue;
                 switch (state.control_mode) {
                     case HDPCConst::MODE_STOPPED:
@@ -121,7 +121,7 @@ class HDPCController
                             ROS_INFO("ICR Positon: [-/0/+] wiht button [3/2/4]");
                         } else if (joystate.buttons[3]) {
                             ddmsg = hdpc_drive::DirectDrive();
-			    last_dd_cmd = -1;
+                            last_dd_cmd = -1;
                             current_axle = 0;
                             set_control_mode(HDPCConst::MODE_DIRECT_DRIVE);
                             ROS_INFO("Entering Direct Drive mode.");
@@ -140,12 +140,12 @@ class HDPCController
                         } else if (joystate.buttons[3] && (tnow - last_dd_cmd > 0.5)) {
                             setdd(ddmsg,current_axle,0.0);
                             current_axle = (current_axle - 1) % 10;
-			    last_dd_cmd = tnow;
+                            last_dd_cmd = tnow;
                             ROS_INFO("DirectDrive: controlling DoF %d",current_axle);
                         } else if (joystate.buttons[4] && (tnow - last_dd_cmd > 0.5)) {
                             setdd(ddmsg,current_axle,0.0);
                             current_axle = (current_axle + 1) % 10;
-			    last_dd_cmd = tnow;
+                            last_dd_cmd = tnow;
                             ROS_INFO("DirectDrive: controlling DoF %d",current_axle);
                         } else {
                             setdd(ddmsg,current_axle,joystate.axes[1]);
@@ -161,9 +161,9 @@ class HDPCController
                             set_control_mode(HDPCConst::MODE_STOPPED);
                             ROS_INFO("Leaving Ackermann mode");
                         } else {
-                            hdpc_drive::Ackermann msg;
+                            geometry_msgs::Twist msg;
                             // rotation speed in [-0.5,0.5] m/s
-                            msg.velocity = joystate.axes[1] * max_linear_velocity; 
+                            msg.linear.x = joystate.axes[1] * max_linear_velocity; 
                             if (joystate.buttons[3]) {
                                 rotation_elevation -= 0.05;
                             } else if (joystate.buttons[4]) {
@@ -171,8 +171,14 @@ class HDPCController
                             } else if (joystate.buttons[2]) {
                                 rotation_elevation = M_PI/2;
                             }
-			    rotation_elevation = remainder(rotation_elevation, M_PI);
-                            msg.elevation_rad = rotation_elevation;
+                            rotation_elevation = remainder(rotation_elevation, M_PI);
+                            if ((rotation_elevation > 0) && (rotation_elevation < elevation_boundary_rad)) {
+                                rotation_elevation = elevation_boundary_rad + 0.05;
+                            }
+                            if ((rotation_elevation < 0) && (rotation_elevation > -elevation_boundary_rad)) {
+                                rotation_elevation = -(elevation_boundary_rad + 0.05);
+                            }
+                            msg.angular.z = msg.linear.x / tan(rotation_elevation);
                             control_pub.publish(msg);
                         }
                         break;
@@ -186,27 +192,23 @@ class HDPCController
                             set_control_mode(HDPCConst::MODE_STOPPED);
                             ROS_INFO("Leaving Rotation mode");
                         } else {
-                            hdpc_drive::Ackermann msg;
+                            geometry_msgs::Twist msg;
                             // rotation speed in [-1,1] rad/s
-                            msg.velocity = -joystate.axes[0] * max_rotational_velocity; 
-                            if (fabs(msg.velocity) < 0.1) {
-                                // dead zone at the center
-                                msg.velocity = 0.0;
-                            }
+                            msg.angular.z = -joystate.axes[0] * max_rotational_velocity; 
                             if (joystate.buttons[3]) {
                                 rotation_elevation += 0.05;
                                 if (rotation_elevation > elevation_boundary_rad) {
-                                    rotation_elevation = elevation_boundary_rad;
+                                    rotation_elevation = elevation_boundary_rad-0.05;
                                 }
                             } else if (joystate.buttons[4]) {
                                 rotation_elevation -= 0.05;
                                 if (rotation_elevation < -elevation_boundary_rad) {
-                                    rotation_elevation = -elevation_boundary_rad;
+                                    rotation_elevation = -elevation_boundary_rad+0.05;
                                 }
                             } else if (joystate.buttons[2]) {
                                 rotation_elevation = 0.;
                             }
-                            msg.elevation_rad = rotation_elevation;
+                            msg.linear.x = msg.angular.z * tan(rotation_elevation);
                             control_pub.publish(msg);
                         }
                         break;
@@ -226,14 +228,14 @@ class HDPCController
 
 int main(int argc, char *argv[])
 {
-	ros::init(argc, argv, "hdpc_teleop");
-	ros::NodeHandle nh;
+    ros::init(argc, argv, "hdpc_teleop");
+    ros::NodeHandle nh;
 
-	HDPCController api(nh);
+    HDPCController api(nh);
 
-	api.joyctrl();
+    api.joyctrl();
 
-	return 0;
+    return 0;
 }
 
-		
+

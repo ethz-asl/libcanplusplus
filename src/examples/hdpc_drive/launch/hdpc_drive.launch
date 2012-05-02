@@ -1,23 +1,5 @@
 <launch>
-    <param name="/rover_height" value="0.577" />
-    <param name="/rover_width" value="0.820" />
-    <param name="/rover_center_to_front" value="0.750" />
-    <param name="/rover_center_to_rear" value="0.750" />
-    <param name="/rover_rocker_to_front_axle" value="0.750" />
-    <param name="/rover_rocker_to_boggie_x" value="0.375" />
-    <param name="/rover_wheel_radius" value="0.125" />
-    <param name="/rover_rocker_to_boggie_z" value="0.260" />
-    <param name="/rover_boggie_to_axle_z" value="0.192" />
-    <param name="/rover_boggie_to_rear_axle" value="0.375" />
-    <param name="/rover_boggie_to_middle_axle" value="0.375" />
-
-<!--
-    <node type="hdpc_com" pkg="hdpc_com" name="hdpc_com" output="screen">
-        <param name="verbose" value="1" />
-    </node>
-    <node type="hdpc_visualize" pkg="hdpc_visualize" name="hdpc_visualize" output="screen">
-    </node>
--->
+    <include file="$(find hdpc_com)/launch/hdpc_geom.launch"/>
 
 
     <node type="hdpc_drive" pkg="hdpc_drive" name="hdpc_drive" output="screen">

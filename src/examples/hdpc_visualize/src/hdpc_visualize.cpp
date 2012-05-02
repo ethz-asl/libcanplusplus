@@ -135,7 +135,7 @@ class HDPCVisualize {
             mk.points[1].z = 0.0;
             mk.points[2].x = geom.rover_rocker_to_front_axle;
             mk.points[2].y = 0.0;
-            mk.points[2].z = -(geom.rover_rocker_to_boggie_z-geom.rover_boggie_to_axle_z);
+            mk.points[2].z = -(geom.rover_rocker_to_boggie_z+geom.rover_boggie_to_axle_z);
             ma.markers.push_back(mk);
 
             mk.header.frame_id="RightRocker";
