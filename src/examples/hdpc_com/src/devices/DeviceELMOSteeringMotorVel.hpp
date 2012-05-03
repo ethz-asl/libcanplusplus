@@ -1,5 +1,5 @@
 /*!
- * @file 	DeviceELMOSteeringMotor.hpp
+ * @file 	DeviceELMOSteeringMotorVel.hpp
  * @brief
  * @author 	Christian Gehring
  * @date 	Jan, 2012
@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef DEVICEELMOSTEERINGMOTOR_HPP_
-#define DEVICEELMOSTEERINGMOTOR_HPP_
+#ifndef DEVICEELMOSTEERINGMOTORVEL_HPP_
+#define DEVICEELMOSTEERINGMOTORVEL_HPP_
 
 #include "DeviceELMOBaseMotor.hpp"
 
@@ -18,7 +18,7 @@
 /*! This class configures and the ELMOs that control the steering motors of the HDPC.
  * @ingroup robotCAN, device
  */
-class DeviceELMOSteeringMotor: public DeviceELMOBaseMotor {
+class DeviceELMOSteeringMotorVel: public DeviceELMOBaseMotor {
 public:
 
 	//! Used for homing procedure
@@ -28,10 +28,10 @@ public:
 	 * @param nodeId	CAN node ID
 	 * @param deviceParams	parameter struct
 	 */
-	DeviceELMOSteeringMotor(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams);
+	DeviceELMOSteeringMotorVel(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams);
 
 	//! Destructor
-	virtual ~DeviceELMOSteeringMotor();
+	virtual ~DeviceELMOSteeringMotorVel();
 
 	/* configure at init */
 	virtual void setMotorParameters();
@@ -47,7 +47,7 @@ public:
 	/*! Configures the PDO to send the profile position
 	 * Is invoked by configRxPDOs()
 	 */
-	virtual void configRxPDOProfilePosition();
+	virtual void configRxPDOProfileVelocity();
 
 	//! Adds the command PDOs to the bus manager
 	virtual void addRxPDOs();
@@ -55,11 +55,19 @@ public:
 
 	/* configure at run-time */
 
-	/*! Sets the desired joint position [rad]
-	 * Converts the joint position to the desired motor position [ticks]
-	 * @param position 		joint position [rad]
+	/*! Sets the desired joint position [rad] with maximum velocity [rad/s]
+	 * Use setProfileVelocity
+	 * @param position 		motor position [rad]
+	 * @param velocity 		motor velocity [rad/s]
 	 */
-	void setProfilePosition(double jointPosition_rad);
+    void setProfilePosition(double jointPosition_rad, double jointVelocity_rad_s);
+
+	/*! Sets the desired joint velocity [rad/s]
+	 * Converts the velocity to the desired motor velocity [rpm]
+	 * @param velocity 		motor velocity [rad/s]
+	 */
+	virtual void setProfileVelocity(double velocity);
+
 
 	//! Enable the ELMO
 	virtual void setEnableMotor();
@@ -69,8 +77,9 @@ public:
 
 
 protected:
-	//! PDO message to send motor position command
-	RxPDOPosition* rxPDOPosition_;
+	//! PDO message to send motor velocity command
+	RxPDOVelocity* rxPDOVelocity_;
+
 };
 
-#endif /* DEVICEELMOSTEERINGMOTOR_HPP_ */
+#endif /* DEVICEELMOSTEERINGMOTORVEL_HPP_ */

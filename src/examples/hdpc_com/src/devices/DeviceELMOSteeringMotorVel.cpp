@@ -1,5 +1,5 @@
 /*!
- * @file 	DeviceELMOSteeringMotor.cpp
+ * @file 	DeviceELMOSteeringMotorVel.cpp
  * @brief
  * @author 	Christian Gehring
  * @date 	Jan, 2012
@@ -8,47 +8,50 @@
  *
  */
 
-#include "DeviceELMOSteeringMotor.hpp"
+#include "DeviceELMOSteeringMotorVel.hpp"
 #include <stdio.h>
 #include <math.h>
 
 
-DeviceELMOSteeringMotor::DeviceELMOSteeringMotor(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams)
+DeviceELMOSteeringMotorVel::DeviceELMOSteeringMotorVel(int nodeId, DeviceELMOMotorParametersHDPC* deviceParams)
 :DeviceELMOBaseMotor(nodeId,deviceParams)
 {
 
 }
 
-DeviceELMOSteeringMotor::~DeviceELMOSteeringMotor()
+DeviceELMOSteeringMotorVel::~DeviceELMOSteeringMotorVel()
 {
 
 }
 
 
-void DeviceELMOSteeringMotor::addRxPDOs()
+void DeviceELMOSteeringMotorVel::addRxPDOs()
 {
 
-	/* add Position RxPDO */
-	rxPDOPosition_ = new RxPDOPosition(nodeId_, deviceParams_->rxPDO1SMId_);
-	bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
+	/* add Velocity RxPDO */
+	rxPDOVelocity_ = new RxPDOVelocity(nodeId_, deviceParams_->rxPDO1SMId_);
+	bus_->getRxPDOManager()->addPDO(rxPDOVelocity_);
 
 }
 
-void DeviceELMOSteeringMotor::setProfilePosition(double jointPosition_rad)
+void DeviceELMOSteeringMotorVel::setProfilePosition(double jointPosition_rad, double jointVelocity_rad_s)
 {
-
-	int jointPosition_ticks = (jointPosition_rad - deviceParams_->homeOffsetJointPosition_rad) * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS;
-	rxPDOPosition_->setPosition(jointPosition_ticks);
-
-	/* debugging */
-	//jointPosition_ticks = 500000;
-	//	Working with elmo
-	//	SDOManager* SDOManager = bus_->getSDOManager();
-	//	SDOManager->addSDO(new SDOSetProfilePosition(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, jointPosition_ticks));
-	//SDOManager->addSDO(new SDOControlWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03F));
+    const double Ke = 1.0;
+    double command_pos = remainder(jointPosition_rad,M_PI);
+    double position_error = remainder(command_pos - getPosition(), 2*M_PI);
+    double command_vel = Ke * position_error;
+    if (command_vel > jointVelocity_rad_s) {command_vel = jointVelocity_rad_s;}
+    if (command_vel <-jointVelocity_rad_s) {command_vel =-jointVelocity_rad_s;}
+    setProfileVelocity(jointVelocity_rad_s);
 }
 
-void DeviceELMOSteeringMotor::setMotorParameters()
+void DeviceELMOSteeringMotorVel::setProfileVelocity(double jointVelocity_rad_s)
+{
+	int jointVelocity_counts_s = jointVelocity_rad_s * deviceParams_->rad_s_Gear_to_counts_s_Motor;
+	rxPDOVelocity_->setVelocity(jointVelocity_counts_s);
+}
+
+void DeviceELMOSteeringMotorVel::setMotorParameters()
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
 	setPositionLimits(deviceParams_->positionLimits);
@@ -60,7 +63,7 @@ void DeviceELMOSteeringMotor::setMotorParameters()
 }
 
 
-bool DeviceELMOSteeringMotor::initDevice()
+bool DeviceELMOSteeringMotorVel::initDevice()
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
 
@@ -91,7 +94,7 @@ bool DeviceELMOSteeringMotor::initDevice()
 }
 
 
-void DeviceELMOSteeringMotor::configRxPDOs()
+void DeviceELMOSteeringMotorVel::configRxPDOs()
 {
 
 	SDOManager* SDOManager = bus_->getSDOManager();
@@ -102,44 +105,43 @@ void DeviceELMOSteeringMotor::configRxPDOs()
 	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	SDOManager->addSDO(new SDORxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 
-	configRxPDOProfilePosition();
+	configRxPDOProfileVelocity();
 }
 
 
-void DeviceELMOSteeringMotor::configRxPDOProfilePosition()
+void DeviceELMOSteeringMotorVel::configRxPDOProfileVelocity()
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
 
-	/* Receive PDO 3 Parameter */
-	///< Step 1: Configure COB-ID of the RxPDO 3
-	SDOManager->addSDO(new SDORxPDO3ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	/* Receive PDO 1 Parameter */
+	///< Step 1: Configure COB-ID of the RxPDO 2
+	SDOManager->addSDO(new SDORxPDO2ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	///< Step 2: Set Transmission Type: SYNC 0x01
-	SDOManager->addSDO(new SDORxPDO3SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00)); // SYNC
+	SDOManager->addSDO(new SDORxPDO2SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
 	///< Step 3: Number of Mapped Application Objects
-	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+	SDOManager->addSDO(new SDORxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	///< Step 4: Mapping Objects
 
 	///< Mapping "Operation Mode"
-	SDOManager->addSDO(new SDORxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60600008));
-
-	///< Mapping "Target position"
-	SDOManager->addSDO(new SDORxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x607A0020));
+	SDOManager->addSDO(new SDORxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60600008));
+	///< Mapping "Demand Velocity"
+	SDOManager->addSDO(new SDORxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60FF0020));
 	///< Mapping "Controlword"
-	SDOManager->addSDO(new SDORxPDO3SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x60400010));
-
+	SDOManager->addSDO(new SDORxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x60400010));
 
 	///< Step 5: Number of Mapped Application Objects
-	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
+	SDOManager->addSDO(new SDORxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
+
 }
 
-void DeviceELMOSteeringMotor::setEnableMotor()
+void DeviceELMOSteeringMotorVel::setEnableMotor()
 {
-	rxPDOPosition_->enable();
+	rxPDOVelocity_->enable();
 }
 
-void DeviceELMOSteeringMotor::setDisableMotor()
+void DeviceELMOSteeringMotorVel::setDisableMotor()
 {
-	rxPDOPosition_->disable();
+	rxPDOVelocity_->disable();
 }
 
 

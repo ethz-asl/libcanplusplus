@@ -48,6 +48,7 @@ set(SRCS
 	./src/hdpc_com_main.cpp
 	./src/devices/DeviceELMOBaseMotor.cpp
 	./src/devices/DeviceELMOSteeringMotor.cpp
+	./src/devices/DeviceELMOSteeringMotorVel.cpp
 	./src/devices/DeviceELMODrivingMotor.cpp
 	./src/state_machine/HDPCStateMachine.cpp
 	./src/state_machine/HDPCStates.cpp

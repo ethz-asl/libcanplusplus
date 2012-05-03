@@ -71,19 +71,12 @@ class HDPCDrive {
 
         void vel_and_steering(float v_c, float omega_c, float x_w, float y_w, float current_steering, 
                 float *v_w, float *steering_w=NULL) {
-            if (fabs(omega_c) < 1e-2) {
-                if (steering_w) {
-                    *steering_w = 0.0;
-                }
-                if (v_w) {
-                    *v_w = v_c / geom.rover_wheel_radius;
-                }
-            } else if (fabs(v_c) < 1e-2) {
-                if (v_w) {
-                    *v_w = 0.0;
-                }
+            if ((fabs(omega_c) < 1e-2) && (fabs(v_c) < 1e-2)) {
                 if (steering_w) {
                     *steering_w = current_steering;
+                }
+                if (v_w) {
+                    *v_w = 0;
                 }
             } else {
                 double phi_w = atan2(x_w*omega_c,(v_c - y_w*omega_c));
@@ -271,7 +264,6 @@ class HDPCDrive {
             sts.control_mode = control_mode;
             motors = sts.motors = *msg;
             status_pub.publish(sts);
-            // TODO: create a visualization node
         }
 
         void directDriveCallback(const DirectDrive::ConstPtr& msg)
