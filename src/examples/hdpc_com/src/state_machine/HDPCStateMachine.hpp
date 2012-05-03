@@ -29,11 +29,13 @@
 
 #include "BusManager.hpp"
 
-#define ELMOSteeringUseVelocity 1
+#define ELMOSteeringUseVelocity 0
 #if ELMOSteeringUseVelocity==1
+#warning Using velocity control for steering
 #include "DeviceELMOSteeringMotorVel.hpp"
 #define ELMOSteeringProxy DeviceELMOSteeringMotorVel
 #else
+#warning Using position control for steering
 #include "DeviceELMOSteeringMotor.hpp"
 #define ELMOSteeringProxy DeviceELMOSteeringMotor
 #endif

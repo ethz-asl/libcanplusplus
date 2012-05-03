@@ -94,7 +94,7 @@ sc::result StInit::react( const EvExecute& )
 sc::result StInit::react( const EvStateInfo& )
 {
 	outermost_context().actualState_ = SM_INIT;
-	ROS_INFO("StInit");
+	// ROS_INFO("StInit");
 	return discard_event();
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -149,7 +149,7 @@ sc::result StHoming::react( const EvExecute& )
 sc::result StHoming::react( const EvStateInfo& )
 {
 	outermost_context().actualState_ = SM_INIT;
-	ROS_INFO("StHoming");
+	// ROS_INFO("StHoming");
 	return discard_event();
 }
 
@@ -187,7 +187,7 @@ sc::result StStop::react( const EvExecute& )
 sc::result StStop::react( const EvStateInfo& )
 {
 	outermost_context().actualState_ = SM_STOP;
-	ROS_INFO("StStop");
+	// ROS_INFO("StStop");
 	return discard_event();
 }
 
@@ -230,7 +230,7 @@ sc::result StFault::react( const EvEmergencyStop& )
 sc::result StFault::react( const EvStateInfo& )
 {
 	outermost_context().actualState_ = SM_FAULT;
-	ROS_INFO("StFault");
+	// ROS_INFO("StFault");
 	return discard_event();
 }
 
@@ -362,7 +362,7 @@ sc::result StDrive::react( const EvExecute& )
 sc::result StDrive::react( const EvStateInfo& )
 {
 	outermost_context().actualState_ = SM_DRIVE;
-	ROS_INFO("StDrive");
+	// ROS_INFO("StDrive");
 	return discard_event();
 }
 
@@ -409,7 +409,7 @@ sc::result StDriveTestDrivingMotor::react( const EvExecute& )
 sc::result StDriveTestDrivingMotor::react( const EvStateInfo& )
 {
 	outermost_context().actualState_ = SM_DRIVE;
-	ROS_INFO("StDriveTestDrivingMotor");
+	// ROS_INFO("StDriveTestDrivingMotor");
 	return discard_event();
 }
 
@@ -458,7 +458,7 @@ sc::result StDriveTestSteeringMotor::react( const EvExecute& )
 sc::result StDriveTestSteeringMotor::react( const EvStateInfo& )
 {
 	outermost_context().actualState_ = SM_DRIVE;
-	ROS_INFO("StDriveTestSteeringMotor");
+	// ROS_INFO("StDriveTestSteeringMotor");
 	return discard_event();
 }
 
@@ -514,7 +514,7 @@ sc::result StDriveTestAll::react( const EvExecute& )
 sc::result StDriveTestAll::react( const EvStateInfo& )
 {
 	outermost_context().actualState_ = SM_DRIVE;
-	ROS_INFO("StDriveTestAll");
+	// ROS_INFO("StDriveTestAll");
 	return discard_event();
 }
 

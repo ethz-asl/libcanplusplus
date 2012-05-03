@@ -40,68 +40,94 @@ class HDPCDrive {
         static const unsigned int WATCHDOG_INIT = 100;
         unsigned int watchdog;
         hdpc_com::Readings motors;
+        hdpc_com::Commands commands;
 
         void stop_rover() {
-            if (control_mode == HDPCConst::MODE_STOPPED) {
-                return;
+            double max_wheel_offset = 0;
+            for (unsigned int i=6;i<10;i++) {
+                max_wheel_offset = std::max(fabs(motors.position[i]),max_wheel_offset);
             }
 
-            hdpc_com::Commands cmd;
-            cmd.header.stamp = ros::Time::now();
-            for (unsigned int i=0;i<10;i++) {
-                cmd.isActive[i] = false;
-                cmd.velocity[i] = 0;
-                cmd.position[i] = motors.position[i];
+            if (max_wheel_offset > 5e-2) {
+                // ROS_INFO("STOPPING: Max wheel offset: %02f",max_wheel_offset);
+                commands.header.stamp = ros::Time::now();
+                for (unsigned int i=0;i<6;i++) {
+                    commands.isActive[i] = false;
+                    commands.velocity[i] = 0.0;
+                }
+                for (unsigned int i=6;i<10;i++) {
+                    commands.isActive[i] = true;
+                    commands.position[i] = 0.0;
+                }
+            } else if (control_mode != HDPCConst::MODE_STOPPED) {
+                hdpc_com::ChangeStateMachine change_state;
+                change_state.request.event = EVENT_STOP;
+                state_machine_client.call(change_state);
+
+                control_mode = HDPCConst::MODE_STOPPED;
+                if (watchdog == 0) {
+                    ROS_INFO("HDPC Drive: Rover entered STOPPED mode on watchdog");
+                } else {
+                    ROS_INFO("HDPC Drive: Rover entered STOPPED mode");
+                }
             }
-            command_pub.publish(cmd);
+        }
 
-            hdpc_com::ChangeStateMachine change_state;
-            change_state.request.event = EVENT_STOP;
-            state_machine_client.call(change_state);
+        void init_rotation() {
+            double desired[10];
+            desired[HDPCConst::STEERING_FRONT_LEFT] = remainder(-atan2(geom.rover_center_to_front,geom.rover_width/2.),M_PI);
+            desired[HDPCConst::STEERING_FRONT_RIGHT] = remainder(-atan2(geom.rover_center_to_front,-geom.rover_width/2.),M_PI);
+            desired[HDPCConst::STEERING_REAR_LEFT] = remainder(-atan2(-geom.rover_center_to_rear,geom.rover_width/2.),M_PI);
+            desired[HDPCConst::STEERING_REAR_RIGHT] = remainder(-atan2(-geom.rover_center_to_rear,-geom.rover_width/2.),M_PI);
 
-            control_mode = HDPCConst::MODE_STOPPED;
-            if (watchdog == 0) {
-                ROS_INFO("Rover entered STOPPED mode on watchdog");
-            } else {
-                ROS_INFO("Rover entered STOPPED mode on watchdog");
+            double max_wheel_offset = 0;
+            for (unsigned int i=6;i<10;i++) {
+                max_wheel_offset = std::max(fabs(remainder(motors.position[i]-desired[i],M_PI)),max_wheel_offset);
+            }
+
+            if (max_wheel_offset > 5e-2) {
+                // ROS_INFO("INIT ROT: Max wheel offset: %02f",max_wheel_offset);
+                commands.header.stamp = ros::Time::now();
+                for (unsigned int i=0;i<6;i++) {
+                    commands.isActive[i] = false;
+                    commands.velocity[i] = 0.0;
+                }
+                for (unsigned int i=6;i<10;i++) {
+                    commands.isActive[i] = true;
+                    commands.position[i] = desired[i];
+                }
+            } else if (control_mode != HDPCConst::MODE_ROTATION) {
+                control_mode = HDPCConst::MODE_ROTATION;
+                ROS_INFO("HDPC Drive: Rover entered ROTATION mode");
             }
         }
 
         static inline double SQR(double x) {return x*x;}
 
-        void vel_and_steering(float v_c, float omega_c, float x_w, float y_w, float current_steering, 
-                float *v_w, float *steering_w=NULL) {
+        void vel_and_steering(float v_c, float omega_c, unsigned int i_vel, signed int i_steer, float x_w, float y_w) {
             if ((fabs(omega_c) < 1e-2) && (fabs(v_c) < 1e-2)) {
-                if (steering_w) {
-                    *steering_w = current_steering;
-                }
-                if (v_w) {
-                    *v_w = 0;
-                }
+                commands.velocity[i_vel] = 0.0;
+                commands.isActive[i_vel] = false;
             } else {
                 double phi_w = atan2(x_w*omega_c,(v_c - y_w*omega_c));
-                if (v_w) {
-                    *v_w = sqrt(SQR(x_w * omega_c) + SQR(v_c - y_w * omega_c)) / geom.rover_wheel_radius;
-                    if (fabs(phi_w) > M_PI/2) {
-                        // If the wheel had to turn more than 90 degrees, then
-                        // the other side is used, and the velocity must be
-                        // negated
-                        phi_w = remainder(phi_w,M_PI);
-                        *v_w *= -1;
-                    }
+                commands.isActive[i_vel] = true;
+                commands.velocity[i_vel] = sqrt(SQR(x_w * omega_c) + SQR(v_c - y_w * omega_c)) / geom.rover_wheel_radius;
+                if (fabs(phi_w) > M_PI/2) {
+                    // If the wheel had to turn more than 90 degrees, then
+                    // the other side is used, and the velocity must be
+                    // negated
+                    phi_w = remainder(phi_w,M_PI);
+                    commands.velocity[i_vel] *= -1;
                 }
-                if (steering_w) {
-                    *steering_w = phi_w;
+                if (i_steer>=0) {
+                    commands.isActive[i_steer] = true;
+                    commands.position[i_steer] = phi_w;
                 }
             }
         }
 
         void drive_rover(float velocity, float omega) {
-            hdpc_com::Commands cmd;
-            cmd.header.stamp = ros::Time::now();
-            for (unsigned int i=0;i<10;i++) {
-                cmd.isActive[i] = true;
-            }
+            commands.header.stamp = ros::Time::now();
             if (omega > max_rotation_speed_rad_per_s) {
                 omega = max_rotation_speed_rad_per_s;
             }
@@ -116,8 +142,9 @@ class HDPCDrive {
             }
             double r = velocity / omega;
             switch (control_mode) {
-                case HDPCConst::MODE_STOPPED:
+                case HDPCConst::MODE_INIT:
                 case HDPCConst::MODE_DIRECT_DRIVE:
+                case HDPCConst::MODE_INIT_ROTATION:
                     ROS_WARN("Ignored drive command in current mode");
                     return;
                     break;
@@ -152,40 +179,33 @@ class HDPCDrive {
             double max_t_steering = 0, delta_steering[10];
             unsigned int i;
             i = HDPCConst::STEERING_FRONT_LEFT;
-            vel_and_steering(velocity, omega, geom.rover_center_to_front, geom.rover_width/2.,
-                    motors.position[i],&cmd.velocity[HDPCConst::DRIVE_FRONT_LEFT], &cmd.position[i]);
-            delta_steering[i] = cmd.position[i] - motors.position[i];
+            vel_and_steering(velocity, omega, HDPCConst::DRIVE_FRONT_LEFT, i, geom.rover_center_to_front, geom.rover_width/2.);
+            delta_steering[i] = commands.position[i] - motors.position[i];
             max_t_steering = std::max(max_t_steering,fabs(delta_steering[i])/geom.rover_max_steering_velocity);
 
             i = HDPCConst::STEERING_FRONT_RIGHT;
-            vel_and_steering(velocity, omega, geom.rover_center_to_front, -geom.rover_width/2.,
-                    motors.position[i],&cmd.velocity[HDPCConst::DRIVE_FRONT_RIGHT], &cmd.position[i]);
-            delta_steering[i] = cmd.position[i] - motors.position[i];
+            vel_and_steering(velocity, omega, HDPCConst::DRIVE_FRONT_RIGHT, i, geom.rover_center_to_front, -geom.rover_width/2.);
+            delta_steering[i] = commands.position[i] - motors.position[i];
             max_t_steering = std::max(max_t_steering,fabs(delta_steering[i])/geom.rover_max_steering_velocity);
 
-            vel_and_steering(velocity, omega, 0, geom.rover_width/2.,
-                    0.0,&cmd.velocity[HDPCConst::DRIVE_MIDDLE_LEFT]);
-            vel_and_steering(velocity, omega, 0, -geom.rover_width/2.,
-                    0.0,&cmd.velocity[HDPCConst::DRIVE_MIDDLE_RIGHT]);
+            vel_and_steering(velocity, omega, HDPCConst::DRIVE_MIDDLE_LEFT, -1, 0, geom.rover_width/2.);
+            vel_and_steering(velocity, omega, HDPCConst::DRIVE_MIDDLE_RIGHT, -1, 0, -geom.rover_width/2.);
 
             i = HDPCConst::STEERING_REAR_LEFT;
-            vel_and_steering(velocity, omega, -geom.rover_center_to_rear, geom.rover_width/2.,
-                    motors.position[i],&cmd.velocity[HDPCConst::DRIVE_REAR_LEFT], &cmd.position[i]);
-            delta_steering[i] = cmd.position[i] - motors.position[i];
+            vel_and_steering(velocity, omega, HDPCConst::DRIVE_REAR_LEFT, i, -geom.rover_center_to_rear, geom.rover_width/2.);
+            delta_steering[i] = commands.position[i] - motors.position[i];
             max_t_steering = std::max(max_t_steering,fabs(delta_steering[i])/geom.rover_max_steering_velocity);
             
             i = HDPCConst::STEERING_REAR_RIGHT;
-            vel_and_steering(velocity, omega, -geom.rover_center_to_rear, -geom.rover_width/2.,
-                    motors.position[i],&cmd.velocity[HDPCConst::DRIVE_REAR_RIGHT], &cmd.position[i]);
-            delta_steering[i] = cmd.position[i] - motors.position[i];
+            vel_and_steering(velocity, omega, HDPCConst::DRIVE_REAR_RIGHT, i, -geom.rover_center_to_rear, -geom.rover_width/2.);
+            delta_steering[i] = commands.position[i] - motors.position[i];
             max_t_steering = std::max(max_t_steering,fabs(delta_steering[i])/geom.rover_max_steering_velocity);
 
-            cmd.velocity[HDPCConst::STEERING_FRONT_LEFT] = delta_steering[HDPCConst::STEERING_FRONT_LEFT]/max_t_steering;
-            cmd.velocity[HDPCConst::STEERING_FRONT_RIGHT] = delta_steering[HDPCConst::STEERING_FRONT_RIGHT]/max_t_steering;
-            cmd.velocity[HDPCConst::STEERING_REAR_LEFT] = delta_steering[HDPCConst::STEERING_REAR_LEFT]/max_t_steering;
-            cmd.velocity[HDPCConst::STEERING_REAR_RIGHT] = delta_steering[HDPCConst::STEERING_REAR_RIGHT]/max_t_steering;
+            commands.velocity[HDPCConst::STEERING_FRONT_LEFT] = delta_steering[HDPCConst::STEERING_FRONT_LEFT]/max_t_steering;
+            commands.velocity[HDPCConst::STEERING_FRONT_RIGHT] = delta_steering[HDPCConst::STEERING_FRONT_RIGHT]/max_t_steering;
+            commands.velocity[HDPCConst::STEERING_REAR_LEFT] = delta_steering[HDPCConst::STEERING_REAR_LEFT]/max_t_steering;
+            commands.velocity[HDPCConst::STEERING_REAR_RIGHT] = delta_steering[HDPCConst::STEERING_REAR_RIGHT]/max_t_steering;
             
-            command_pub.publish(cmd);
         }
 
         bool set_mode(SetControlMode::Request  &req, SetControlMode::Response &res )
@@ -211,16 +231,8 @@ class HDPCDrive {
                     }
                     break;
                 case SM_DRIVE:
-                    if (req.request_mode != HDPCConst::MODE_STOPPED) {
-                        break;
-                    }
-                    change_state.request.event = EVENT_STOP;
-                    if (!state_machine_client.call(change_state)) {
-                        ROS_WARN("Change state machine failed");
-                        res.result = false;
-                        res.result_mode = control_mode;
-                        return false;
-                    }
+                    // Normal. Nothing to do. Stop rover will stop the rover
+                    // eventually if required
                     break;
                 case SM_FAULT:
                 default:
@@ -232,20 +244,35 @@ class HDPCDrive {
             res.result = true;
             if (control_mode != req.request_mode) {
                 switch (req.request_mode) {
-                    case HDPCConst::MODE_ACKERMANN:
+                    case HDPCConst::MODE_INIT_ROTATION:
                     case HDPCConst::MODE_ROTATION:
+                        if (control_mode != HDPCConst::MODE_STOPPED) {
+                            ROS_WARN("Cannot switch to ROTATION from any other mode than STOPPED");
+                            res.result = false;
+                        } else {
+                            control_mode = HDPCConst::MODE_INIT_ROTATION;
+                            ROS_INFO("Entering Init Rotation mode");
+                        }
+                        break;
+                    case HDPCConst::MODE_ACKERMANN:
                         if (control_mode != HDPCConst::MODE_STOPPED) {
                             ROS_WARN("Cannot switch to ACKERMANN or ROTATION from any other mode than STOPPED");
                             res.result = false;
                         } else {
                             control_mode = req.request_mode;
+                            ROS_INFO("Entering Ackermann mode");
                         }
                         break;
-                    case HDPCConst::MODE_STOPPED:
                     case HDPCConst::MODE_DIRECT_DRIVE:
-                    default:
-                        // authorized from any mode
                         control_mode = req.request_mode;
+                        ROS_INFO("Entering Direct Drive mode");
+                        break;
+                    case HDPCConst::MODE_INIT:
+                    case HDPCConst::MODE_STOPPED:
+                        control_mode = HDPCConst::MODE_INIT;
+                        ROS_INFO("Entering INIT mode");
+                        break;
+                    default:
                         break;
                 }
             } else {
@@ -273,26 +300,24 @@ class HDPCDrive {
                 return;
             }
             watchdog = WATCHDOG_INIT;
-            hdpc_com::Commands cmd;
-            cmd.header.stamp = ros::Time::now();
+            commands.header.stamp = ros::Time::now();
             for (unsigned int i=0;i<10;i++) {
-                cmd.isActive[i] = true;
+                commands.isActive[i] = true;
             }
-            cmd.velocity[HDPCConst::DRIVE_FRONT_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_FRONT_LEFT];
-            cmd.velocity[HDPCConst::DRIVE_FRONT_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_FRONT_RIGHT];
-            cmd.velocity[HDPCConst::DRIVE_MIDDLE_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_MIDDLE_LEFT];
-            cmd.velocity[HDPCConst::DRIVE_MIDDLE_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_MIDDLE_RIGHT];
-            cmd.velocity[HDPCConst::DRIVE_REAR_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_REAR_LEFT];
-            cmd.velocity[HDPCConst::DRIVE_REAR_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_REAR_RIGHT];
-            cmd.velocity[HDPCConst::STEERING_FRONT_LEFT] = 0.0;
-            cmd.velocity[HDPCConst::STEERING_FRONT_RIGHT] = 0.0;
-            cmd.velocity[HDPCConst::STEERING_REAR_LEFT] = 0.0;
-            cmd.velocity[HDPCConst::STEERING_REAR_RIGHT] = 0.0;
-            cmd.position[HDPCConst::STEERING_FRONT_LEFT] = msg->steering_rad[DirectDrive::WHEEL_FRONT_LEFT];
-            cmd.position[HDPCConst::STEERING_FRONT_RIGHT] = msg->steering_rad[DirectDrive::WHEEL_FRONT_RIGHT]; 
-            cmd.position[HDPCConst::STEERING_REAR_LEFT] = msg->steering_rad[DirectDrive::WHEEL_REAR_LEFT]; 
-            cmd.position[HDPCConst::STEERING_REAR_RIGHT] = msg->steering_rad[DirectDrive::WHEEL_REAR_RIGHT]; 
-            command_pub.publish(cmd);
+            commands.velocity[HDPCConst::DRIVE_FRONT_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_FRONT_LEFT];
+            commands.velocity[HDPCConst::DRIVE_FRONT_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_FRONT_RIGHT];
+            commands.velocity[HDPCConst::DRIVE_MIDDLE_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_MIDDLE_LEFT];
+            commands.velocity[HDPCConst::DRIVE_MIDDLE_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_MIDDLE_RIGHT];
+            commands.velocity[HDPCConst::DRIVE_REAR_LEFT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_REAR_LEFT];
+            commands.velocity[HDPCConst::DRIVE_REAR_RIGHT] = msg->velocities_rad_per_sec[DirectDrive::WHEEL_REAR_RIGHT];
+            commands.velocity[HDPCConst::STEERING_FRONT_LEFT] = 0.0;
+            commands.velocity[HDPCConst::STEERING_FRONT_RIGHT] = 0.0;
+            commands.velocity[HDPCConst::STEERING_REAR_LEFT] = 0.0;
+            commands.velocity[HDPCConst::STEERING_REAR_RIGHT] = 0.0;
+            commands.position[HDPCConst::STEERING_FRONT_LEFT] = msg->steering_rad[DirectDrive::WHEEL_FRONT_LEFT];
+            commands.position[HDPCConst::STEERING_FRONT_RIGHT] = msg->steering_rad[DirectDrive::WHEEL_FRONT_RIGHT]; 
+            commands.position[HDPCConst::STEERING_REAR_LEFT] = msg->steering_rad[DirectDrive::WHEEL_REAR_LEFT]; 
+            commands.position[HDPCConst::STEERING_REAR_RIGHT] = msg->steering_rad[DirectDrive::WHEEL_REAR_RIGHT]; 
         }
 
         void ackermannCallback(const geometry_msgs::Twist::ConstPtr& msg)
@@ -325,12 +350,45 @@ class HDPCDrive {
             elevation_boundary_rad = atan(geom.rover_width/2);
 
             watchdog = 0;
-            stop_rover();
+            control_mode = HDPCConst::MODE_INIT;
+            commands.header.stamp = ros::Time::now();
+            for (unsigned int i=0;i<10;i++) {
+                commands.isActive[i] = false;
+                commands.velocity[i] = 0;
+                commands.position[i] = 0.0;
+            }
         }
 
         bool wait_for_services() {
             state_machine_client.waitForExistence();
-            ROS_INFO("State machine service is ready");
+            ROS_INFO("State machine service is ready, waiting for init");
+            hdpc_com::ChangeStateMachine change_state;
+            ros::Rate rate(1);
+            do {
+                rate.sleep();
+                change_state.request.event = EVENT_READ_STATE;
+                if (!state_machine_client.call(change_state)) {
+                    ROS_WARN("Change state machine: request state failed");
+                    return false;
+                }
+            } while (ros::ok() && (change_state.response.state != SM_STOP));
+            ROS_INFO("HDPC Drive: ROVER is ready");
+
+            change_state.request.event = EVENT_START;
+            if (!state_machine_client.call(change_state)) {
+                ROS_WARN("Change state machine: starting failed");
+                return false;
+            }
+
+            watchdog = 0;
+            control_mode = HDPCConst::MODE_INIT;
+            commands.header.stamp = ros::Time::now();
+            for (unsigned int i=0;i<10;i++) {
+                commands.isActive[i] = false;
+                commands.velocity[i] = 0;
+                commands.position[i] = 0.0;
+            }
+            
             return true;
         }
         
@@ -338,10 +396,28 @@ class HDPCDrive {
             ros::Rate rate(50);
             while (ros::ok()) {
                 ros::spinOnce();
-                if (watchdog == 0) {
-                    stop_rover();
-                } else {
-                    watchdog -= 1;
+                switch (control_mode) {
+                    case HDPCConst::MODE_INIT:
+                        stop_rover();
+                        command_pub.publish(commands);
+                        break;
+                    case HDPCConst::MODE_INIT_ROTATION:
+                        init_rotation();
+                        command_pub.publish(commands);
+                        break;
+                    case HDPCConst::MODE_ROTATION:
+                    case HDPCConst::MODE_ACKERMANN:
+                    case HDPCConst::MODE_DIRECT_DRIVE:
+                        if (watchdog == 0) {
+                            control_mode = HDPCConst::MODE_INIT;
+                        } else {
+                            watchdog -= 1;
+                            command_pub.publish(commands);
+                        }
+                        break;
+                    case HDPCConst::MODE_STOPPED:
+                    default:
+                        break;
                 }
                 rate.sleep();
             }

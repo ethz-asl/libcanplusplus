@@ -1,9 +1,9 @@
-uint8 MODE_STOPPED = 0
-uint8 MODE_DIRECT_DRIVE = 1
-# This would make it easier to use from a ROS point of view
-# uint8 MODE_TWIST = 2
+uint8 MODE_INIT = 0
+uint8 MODE_STOPPED = 1
+uint8 MODE_DIRECT_DRIVE = 2
 uint8 MODE_ACKERMANN = 3
-uint8 MODE_ROTATION = 4
+uint8 MODE_INIT_ROTATION = 4
+uint8 MODE_ROTATION = 5
 
 uint8 DRIVE_FRONT_LEFT = 0
 uint8 DRIVE_FRONT_RIGHT = 1
