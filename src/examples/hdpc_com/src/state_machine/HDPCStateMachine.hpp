@@ -29,6 +29,16 @@
 
 #include "BusManager.hpp"
 
+#define ELMOSteeringUseVelocity 1
+#if ELMOSteeringUseVelocity==1
+#include "DeviceELMOSteeringMotorVel.hpp"
+#define ELMOSteeringProxy DeviceELMOSteeringMotorVel
+#else
+#include "DeviceELMOSteeringMotor.hpp"
+#define ELMOSteeringProxy DeviceELMOSteeringMotor
+#endif
+
+
 namespace sc = boost::statechart;
 
 //////////////////////////////////////////////////////////////////////////////

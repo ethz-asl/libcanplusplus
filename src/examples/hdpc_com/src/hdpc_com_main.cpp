@@ -28,8 +28,6 @@
 
 /* devices */
 #include "DeviceELMODrivingMotor.hpp"
-#include "DeviceELMOSteeringMotor.hpp"
-#include "DeviceELMOSteeringMotorVel.hpp"
 #include "DeviceELMOMotorParametersDrivingAndSteering.hpp"
 
 using namespace std;
@@ -226,7 +224,7 @@ int main(int argc, char** argv)
 		}
 		/* add 4 steering motors */
 		for (int iDevice=6; iDevice < 10; iDevice++) {
-			busManager.getBus(iBus)->getDeviceManager()->addDevice(new DeviceELMOSteeringMotorVel(NODEID_ELMO0+iDevice, new Maxon_REmax24_Enc512(
+			busManager.getBus(iBus)->getDeviceManager()->addDevice(new ELMOSteeringProxy(NODEID_ELMO0+iDevice, new Maxon_REmax24_Enc512(
 																														DESSMID_RxPDO_ELMO0_PROFILE+iDevice,
 																														0,
 																														0,
