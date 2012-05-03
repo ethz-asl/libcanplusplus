@@ -89,6 +89,8 @@ void HDPCStateMachine::publishReadings()
 {
 
 	DeviceManager* devices = busManager_->getBus(0)->getDeviceManager();
+    readings_.header.frame_id = "body";
+    readings_.header.stamp = ros::Time::now();
 	for (int iDevice=0; iDevice < devices->getSize(); iDevice++) {
 		DeviceELMOBaseMotor* motor =  (DeviceELMOBaseMotor*) devices->getDevice(iDevice);
 		readings_.position[iDevice] = motor->getPosition();
