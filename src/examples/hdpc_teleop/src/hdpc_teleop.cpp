@@ -37,9 +37,10 @@ class HDPCController
         double elevation_boundary_rad;
         double max_linear_velocity;
         double max_rotational_velocity;
-        double const_speed_m_s;
-        double const_speed_increment_m_s;
-        //double const_speed_increment_m_s;
+        double initial_const_velocity_m_s;
+        double const_velocity_increment_m_s;
+        double dd_wheel_velocity_rad_s;
+        double dd_steering_increment_rad;
 
         bool firstctrl,gotjoy;
     public:
@@ -52,9 +53,10 @@ class HDPCController
 
             nh.param("max_linear_velocity",max_linear_velocity,0.5);
             nh.param("max_rotational_velocity",max_rotational_velocity,0.5);
-            nh.param("const_speed_m_s",const_speed_m_s,0.0);
-            nh.param("const_speed_increment_m_s",const_speed_increment_m_s,0.1);
-
+            nh.param("initial_const_velocity_m_s",initial_const_velocity_m_s,0.0);
+            nh.param("const_velocity_increment_m_s",const_velocity_increment_m_s,0.1);
+            nh.param("dd_wheel_velocity_rad_s",dd_wheel_velocity_rad_s,0.0175);
+            nh.param("dd_steering_increment_rad",dd_steering_increment_rad,0.0175);
 
             setModeClt = nh.serviceClient<hdpc_drive::SetControlMode>("/hdpc_drive/set_control_mode");
             state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/changeState");
@@ -102,9 +104,9 @@ class HDPCController
 
         void setdd(hdpc_drive::DirectDrive & ddmsg, int axle, double value) {
             if (axle < 6) {
-                ddmsg.velocities_rad_per_sec[axle] = value;
+                ddmsg.velocities_rad_per_sec[axle] = value*dd_wheel_velocity_rad_s;
             } else if (axle < 10) {
-                ddmsg.steering_rad[axle-6] = value;
+                ddmsg.steering_rad[axle-6] = value*dd_steering_increment_rad;
             }
             directdrive_pub.publish(ddmsg);
         }
@@ -115,9 +117,9 @@ class HDPCController
             int prev_control_mode = -1;
             double rotation_elevation = 0.0;
             double tnow, last_dd_cmd = -1, last_reset_cmd = -5;
-            double last_const_speed_cmd = -1,last_speed_incr_cmd = -1;
-            bool is_const_speed = false;
-            double current_const_speed_m_s = const_speed_m_s;
+            double last_const_velocity_cmd = -1,last_velocity_incr_cmd = -1;
+            bool is_const_velocity = false;
+            double current_const_velocity_m_s = initial_const_velocity_m_s;
 
             while (ros::ok()) {
                 looprate.sleep();
@@ -196,25 +198,25 @@ class HDPCController
                         } else {
                             geometry_msgs::Twist msg;
                             // rotation speed in [-0.5,0.5] m/s
-                            // Check for triggered const speed button
-                            if (joystate.buttons[6] && (tnow-last_const_speed_cmd)>0.5){
-                            	is_const_speed = !is_const_speed;
-                            	last_const_speed_cmd = tnow;
-                            	current_const_speed_m_s = const_speed_m_s;
+                            // Check for triggered const velocity button
+                            if (joystate.buttons[6] && (tnow-last_const_velocity_cmd)>0.5){
+                            	is_const_velocity = !is_const_velocity;
+                            	last_const_velocity_cmd = tnow;
+                            	current_const_velocity_m_s = initial_const_velocity_m_s;
                             }
 
-                            if (is_const_speed){
-                            	if (joystate.buttons[8] && (tnow-last_speed_incr_cmd)>0.5){
-                            		if (current_const_speed_m_s <= max_linear_velocity-const_speed_increment_m_s)
-                            			current_const_speed_m_s += const_speed_increment_m_s;
-                            		last_speed_incr_cmd = tnow;
+                            if (is_const_velocity){
+                            	if (joystate.buttons[8] && (tnow-last_velocity_incr_cmd)>0.5){
+                            		if (current_const_velocity_m_s <= max_linear_velocity-const_velocity_increment_m_s)
+                            			current_const_velocity_m_s += const_velocity_increment_m_s;
+                            		last_velocity_incr_cmd = tnow;
                             	}
-                            	if (joystate.buttons[7]&& (tnow-last_speed_incr_cmd)>0.5){
-                            	    if (current_const_speed_m_s >= -max_linear_velocity+const_speed_increment_m_s)
-                            	    	current_const_speed_m_s -= const_speed_increment_m_s;
-                            	    last_speed_incr_cmd = tnow;
+                            	if (joystate.buttons[7]&& (tnow-last_velocity_incr_cmd)>0.5){
+                            	    if (current_const_velocity_m_s >= -max_linear_velocity+const_velocity_increment_m_s)
+                            	    	current_const_velocity_m_s -= const_velocity_increment_m_s;
+                            	    last_velocity_incr_cmd = tnow;
                             	}
-                            	msg.linear.x = current_const_speed_m_s;
+                            	msg.linear.x = current_const_velocity_m_s;
                             }
                             else
                             	msg.linear.x = joystate.axes[1] * max_linear_velocity;
