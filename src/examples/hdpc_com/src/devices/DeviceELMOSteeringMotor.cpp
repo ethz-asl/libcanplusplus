@@ -32,6 +32,10 @@ void DeviceELMOSteeringMotor::addRxPDOs()
 	rxPDOPosition_ = new RxPDOPosition(nodeId_, deviceParams_->rxPDO1SMId_);
 	bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
 
+	/* add PP Profile Velocity RxPDO */ //NOT WORKING
+	//rxPDOPPProfileVelocity_ = new RxPDOPPProfileVelocity(nodeId_, deviceParams_->rxPDO2SMId_);
+	//bus_->getRxPDOManager()->addPDO(rxPDOPPProfileVelocity_);
+
 }
 
 void DeviceELMOSteeringMotor::setProfilePosition(double jointPosition_rad)
@@ -47,6 +51,14 @@ void DeviceELMOSteeringMotor::setProfilePosition(double jointPosition_rad)
 	//	SDOManager->addSDO(new SDOSetProfilePosition(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, jointPosition_ticks));
 	//SDOManager->addSDO(new SDOControlWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03F));
 }
+
+//NOT WORKING!!
+/*void DeviceELMOSteeringMotor::setPPProfileVelocity(double jointVelocity_rad_s)
+{
+
+	int jointVelocity_ticks_s = jointVelocity_rad_s * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS;
+	rxPDOPPProfileVelocity_->setPPProfileVelocity(jointVelocity_ticks_s);
+}*/
 
 void DeviceELMOSteeringMotor::setMotorParameters()
 {
@@ -103,6 +115,7 @@ void DeviceELMOSteeringMotor::configRxPDOs()
 	SDOManager->addSDO(new SDORxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 
 	configRxPDOProfilePosition();
+	//configRxPDOPPProfileVelocity(); //NOT WORKING
 }
 
 
@@ -131,6 +144,29 @@ void DeviceELMOSteeringMotor::configRxPDOProfilePosition()
 	///< Step 5: Number of Mapped Application Objects
 	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
 }
+
+/*
+//NOT WORKING
+void DeviceELMOSteeringMotor::configRxPDOPPProfileVelocity()
+//{
+	SDOManager* SDOManager = bus_->getSDOManager();
+
+	// Receive PDO 4 Parameter
+	///< Step 1: Configure COB-ID of the RxPDO 4
+	SDOManager->addSDO(new SDORxPDO4ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	///< Step 2: Set Transmission Type: SYNC 0x01
+	SDOManager->addSDO(new SDORxPDO4SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00)); // SYNC
+	///< Step 3: Number of Mapped Application Objects
+	SDOManager->addSDO(new SDORxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+	///< Step 4: Mapping Objects
+
+	///< Mapping "Profile Velocity"
+	SDOManager->addSDO(new SDORxPDO4SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60810020));
+
+
+	///< Step 5: Number of Mapped Application Objects
+	SDOManager->addSDO(new SDORxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01));
+}*/
 
 void DeviceELMOSteeringMotor::setEnableMotor()
 {

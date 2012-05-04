@@ -37,6 +37,7 @@ class HDPCController
         double elevation_boundary_rad;
         double max_linear_velocity;
         double max_rotational_velocity;
+        double const_speed_m_s;
 
         bool firstctrl,gotjoy;
     public:
@@ -49,6 +50,7 @@ class HDPCController
 
             nh.param("max_linear_velocity",max_linear_velocity,0.5);
             nh.param("max_rotational_velocity",max_rotational_velocity,0.5);
+            nh.param("const_speed_m_s",const_speed_m_s,0.2);
 
             setModeClt = nh.serviceClient<hdpc_drive::SetControlMode>("/hdpc_drive/set_control_mode");
             state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/changeState");
@@ -186,7 +188,11 @@ class HDPCController
                         } else {
                             geometry_msgs::Twist msg;
                             // rotation speed in [-0.5,0.5] m/s
-                            msg.linear.x = joystate.axes[1] * max_linear_velocity; 
+                            if (joystate.buttons[7])
+                            	msg.linear.x = const_speed_m_s;
+                            else
+                            	msg.linear.x = joystate.axes[1] * max_linear_velocity;
+
                             if (joystate.buttons[3]) {
                                 rotation_elevation -= 0.05;
                             } else if (joystate.buttons[4]) {

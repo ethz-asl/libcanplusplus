@@ -323,6 +323,7 @@ sc::result StDrive::react( const EvExecute& )
                 vmax = machine.commands_.velocity[iDevice];
             }
 			motor->setProfilePosition(machine.commands_.position[iDevice],vmax);
+			motor->setPPProfileVelocity(machine.commands_.command[iDevice]);
 		} else {
 			motor->setProfileVelocity(0.0);
 		}

@@ -55,6 +55,7 @@ void DeviceELMODrivingMotor::setMotorParameters()
 
 bool DeviceELMODrivingMotor::initDevice()
 {
+
 	SDOManager* SDOManager = bus_->getSDOManager();
 
 //	SDOManager->addSDO(new SDONMTResetCommunication(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));

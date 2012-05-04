@@ -132,6 +132,27 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////////////////
+//NOT WORKING
+/*class RxPDOPPProfileVelocity: public CANOpenMsg {
+public:
+	RxPDOPPProfileVelocity(int nodeId, int SMId):CANOpenMsg(0x500+nodeId, SMId)
+	{
+		value_[0] = 0x00;
+		length_[0] = 4;
+
+	};
+
+	void setPPProfileVelocity(int velocity)
+	{
+		value_[0] = velocity;
+	};
+
+	virtual ~RxPDOPPProfileVelocity() {
+
+	};
+};*/
+
+//////////////////////////////////////////////////////////////////////////////
 class RxPDOExCmd: public CANOpenMsg {
 public:
 	RxPDOExCmd(int nodeId, int SMId):CANOpenMsg(0x300+nodeId, SMId)
