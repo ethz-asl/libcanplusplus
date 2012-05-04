@@ -208,11 +208,10 @@ class HDPCController
                             if ((rotation_elevation < 0) && (rotation_elevation > -elevation_boundary_rad)) {
                                 rotation_elevation = -(elevation_boundary_rad + 0.05);
                             }
-                            if (fabs(msg.linear.x)<1e-2) {
+                            msg.angular.z = msg.linear.x / tan(rotation_elevation);
+                            control_pub.publish(msg);
+                            if (fabs(msg.linear.x)<1e-3) {
                                 set_control_mode(HDPCConst::MODE_INIT_ACKERMANN, rotation_elevation);
-                            } else {
-                                msg.angular.z = msg.linear.x / tan(rotation_elevation);
-                                control_pub.publish(msg);
                             }
                         }
                         break;
@@ -228,7 +227,7 @@ class HDPCController
                         } else {
                             geometry_msgs::Twist msg;
                             // rotation speed in [-1,1] rad/s
-                            msg.angular.z = -joystate.axes[0] * max_rotational_velocity; 
+                            msg.angular.z = joystate.axes[0] * max_rotational_velocity; 
                             if (joystate.buttons[3]) {
                                 rotation_elevation += 0.05;
                                 if (rotation_elevation > elevation_boundary_rad) {
@@ -242,11 +241,10 @@ class HDPCController
                             } else if (joystate.buttons[2]) {
                                 rotation_elevation = 0.;
                             }
-                            if (fabs(msg.angular.z)<1e-2) {
+                            msg.linear.x = msg.angular.z * tan(rotation_elevation);
+                            control_pub.publish(msg);
+                            if (fabs(msg.angular.z)<1e-3) {
                                 set_control_mode(HDPCConst::MODE_INIT_ROTATION, rotation_elevation);
-                            } else {
-                                msg.linear.x = msg.angular.z * tan(rotation_elevation);
-                                control_pub.publish(msg);
                             }
                         }
                         break;
