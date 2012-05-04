@@ -33,24 +33,24 @@
 using namespace std;
 
 
+//! cycle rate of loop in millisec
+const double time_step_ms = 25;//2.5;
+
+//! bus rate
+int motor_servo_rate = (int) 1000.0/time_step_ms;
+
+
 //! manager of all CAN buses
 BusManager busManager;
 
 //! state machine
-HDPCStateMachine stateMachine(&busManager);
+HDPCStateMachine stateMachine(&busManager, time_step_ms);
 
 /* parameters */
 
 //! number of buses
 const int nBuses = 1;
 
-
-
-//! cycle rate of loop in millisec
-const double time_step_ms = 25;//2.5;
-
-//! bus rate
-int motor_servo_rate = (int) 1000.0/time_step_ms;
 
 
 

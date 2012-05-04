@@ -338,9 +338,14 @@ sc::result StDrive::react( const EvExecute& )
                 // Set position without velocity profile
                 motor->setProfilePosition(machine.commands_.position[iDevice]);
             } else {
-                // Set position with velocity profile
-#warning Position with velocity is not implemented
-                motor->setProfilePosition(machine.commands_.position[iDevice]);
+                // Set position, but clip maximum displacement
+                double error = remainder(machine.commands_.position[iDevice] - motor->getPosition(),2*M_PI);
+                double max_displacement = machine.commands_.velocity[iDevice] * machine.time_step_ms_;
+                if (fabs(error) > max_displacement) {
+                    if (error > 0) error = max_displacement;
+                    if (error < 0) error = -max_displacement;
+                }
+                motor->setProfilePosition(motor->getPosition() + error);
             }
 		} else {
 			/* ROS command is not active */

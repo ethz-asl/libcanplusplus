@@ -14,7 +14,7 @@
 #include "DeviceELMODrivingMotor.hpp"
 #include "DeviceELMOSteeringMotor.hpp"
 
-HDPCStateMachine::HDPCStateMachine(BusManager* busManager):busManager_(busManager)
+HDPCStateMachine::HDPCStateMachine(BusManager* busManager, double time_step):busManager_(busManager), time_step_ms_(time_step)
 {
 
 	for (unsigned int iDevice=0; iDevice < commands_.isActive.size(); iDevice++) {

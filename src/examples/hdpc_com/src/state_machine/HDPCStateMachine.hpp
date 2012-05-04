@@ -83,6 +83,8 @@ public:
 	//! reference to bus manager
 	BusManager* busManager_;
 
+    //! time step for the controller
+    double time_step_ms_;
 
 	//! commands that are received by commandsCallback()
 	hdpc_com::Commands commands_;
@@ -92,7 +94,7 @@ public:
 	 * @param busManager
 	 * @return
 	 */
-	HDPCStateMachine(BusManager* busManager);
+	HDPCStateMachine(BusManager* busManager, double time_step);
 
 	//! Destructor
 	virtual ~HDPCStateMachine();
