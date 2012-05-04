@@ -334,17 +334,18 @@ sc::result StDrive::react( const EvExecute& )
 		ELMOSteeringProxy* motor =  (ELMOSteeringProxy*) devices->getDevice(iDevice);
 		if (machine.commands_.isActive[iDevice]) {
 			/* send command position */
-            if (machine.commands_.velocity[iDevice] == 0.0) {
+            if (machine.commands_.velocity[iDevice] <= 0.0) {
                 // Set position without velocity profile
                 motor->setProfilePosition(machine.commands_.position[iDevice]);
             } else {
                 // Set position, but clip maximum displacement
                 double error = remainder(machine.commands_.position[iDevice] - motor->getPosition(),2*M_PI);
-                double max_displacement = machine.commands_.velocity[iDevice] * machine.time_step_ms_;
+                double max_displacement = fabs(machine.commands_.velocity[iDevice]) * machine.time_step_ms_*1e-3;
                 if (fabs(error) > max_displacement) {
                     if (error > 0) error = max_displacement;
                     if (error < 0) error = -max_displacement;
                 }
+                // printf("Steering %d: input %.3f output %.3f max %.3f\n",iDevice,machine.commands_.position[iDevice],motor->getPosition() + error, max_displacement);
                 motor->setProfilePosition(motor->getPosition() + error);
             }
 		} else {

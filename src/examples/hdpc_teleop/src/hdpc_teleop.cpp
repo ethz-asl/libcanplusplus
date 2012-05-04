@@ -8,6 +8,8 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
+#include <hdpc_com/ChangeStateMachine.h>
+#include <hdpc_com/HDPCStateMachineEnums.h>
 
 #include <hdpc_drive/SetControlMode.h>
 #include <hdpc_drive/Status.h>
@@ -28,6 +30,7 @@ class HDPCController
         ros::Publisher control_pub;
         ros::Publisher directdrive_pub;
         ros::ServiceClient setModeClt;
+        ros::ServiceClient state_machine_client;
 
         hdpc_com::HDPCGeometry geom;
         hdpc_drive::DirectDrive ddmsg;
@@ -48,6 +51,7 @@ class HDPCController
             nh.param("max_rotational_velocity",max_rotational_velocity,0.5);
 
             setModeClt = nh.serviceClient<hdpc_drive::SetControlMode>("/hdpc_drive/set_control_mode");
+            state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/changeState");
 
             // Subscribe to the state
             state_sub = nh.subscribe("/hdpc_drive/status",1,&HDPCController::stateCallback, this);
@@ -81,6 +85,14 @@ class HDPCController
             }
         }
 
+        void send_reset() {
+            hdpc_com::ChangeStateMachine change_state;
+            change_state.request.event = EVENT_RESET;
+            if (!state_machine_client.call(change_state)) {
+                ROS_WARN("Change state machine: reset request failed");
+            }
+        }
+
         void setdd(hdpc_drive::DirectDrive & ddmsg, int axle, double value) {
             if (axle < 6) {
                 ddmsg.velocities_rad_per_sec[axle] = value;
@@ -95,13 +107,24 @@ class HDPCController
             unsigned int current_axle = 0;
             int prev_control_mode = -1;
             double rotation_elevation = 0.0;
-            double tnow,last_dd_cmd = -1;
+            double tnow,last_dd_cmd = -1, last_reset_cmd=-5;
 
             while (ros::ok()) {
                 looprate.sleep();
                 ros::spinOnce();
                 tnow = ros::Time::now().toSec();
                 if (!gotjoy) continue;
+                if (joystate.buttons[5] && joystate.buttons[10] && ((tnow - last_reset_cmd)>5.0)) {
+                    ROS_WARN("HDPC Teleop: trigerring reset");
+                    send_reset();
+                    set_control_mode(HDPCConst::MODE_INIT);
+                    prev_control_mode = 1;
+                    last_reset_cmd = tnow;
+                    ROS_INFO("HDPC Teleop: wait until end of init before continuing");
+                } else if (joystate.buttons[5] || joystate.buttons[10]) {
+                    ROS_INFO("HDPC Teleop: press button 6 and 11 simultaneously to trigger a reset");
+                }
+
                 switch (state.control_mode) {
                     case HDPCConst::MODE_STOPPED:
                         if (prev_control_mode != state.control_mode) {

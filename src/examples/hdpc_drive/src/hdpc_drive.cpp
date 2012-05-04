@@ -22,9 +22,9 @@ class HDPCDrive {
         hdpc_com::HDPCGeometry geom;
 
         // Transition value between rotation on the spot and ackermann
-        double elevation_boundary_rad;
         double max_rotation_speed_rad_per_s;
         double max_linear_speed_m_per_s;
+        bool synchronise_steering;
     protected:
         ros::Publisher command_pub;
         ros::Subscriber reading_sub;
@@ -58,6 +58,7 @@ class HDPCDrive {
                 for (unsigned int i=6;i<10;i++) {
                     commands.isActive[i] = true;
                     commands.position[i] = 0.0;
+                    commands.velocity[i] = 0.0;
                 }
             } else if (control_mode != HDPCConst::MODE_STOPPED) {
                 hdpc_com::ChangeStateMachine change_state;
@@ -95,6 +96,7 @@ class HDPCDrive {
                 for (unsigned int i=6;i<10;i++) {
                     commands.isActive[i] = true;
                     commands.position[i] = desired[i];
+                    commands.velocity[i] = 0.0;
                 }
             } else if (control_mode != HDPCConst::MODE_ROTATION) {
                 control_mode = HDPCConst::MODE_ROTATION;
@@ -122,6 +124,7 @@ class HDPCDrive {
                 if (i_steer>=0) {
                     commands.isActive[i_steer] = true;
                     commands.position[i_steer] = phi_w;
+                    commands.velocity[i_steer] = 0.;
                 }
             }
         }
@@ -180,12 +183,12 @@ class HDPCDrive {
             unsigned int i;
             i = HDPCConst::STEERING_FRONT_LEFT;
             vel_and_steering(velocity, omega, HDPCConst::DRIVE_FRONT_LEFT, i, geom.rover_center_to_front, geom.rover_width/2.);
-            delta_steering[i] = commands.position[i] - motors.position[i];
+            delta_steering[i] = fabs(commands.position[i] - motors.position[i]);
             max_t_steering = std::max(max_t_steering,fabs(delta_steering[i])/geom.rover_max_steering_velocity);
 
             i = HDPCConst::STEERING_FRONT_RIGHT;
             vel_and_steering(velocity, omega, HDPCConst::DRIVE_FRONT_RIGHT, i, geom.rover_center_to_front, -geom.rover_width/2.);
-            delta_steering[i] = commands.position[i] - motors.position[i];
+            delta_steering[i] = fabs(commands.position[i] - motors.position[i]);
             max_t_steering = std::max(max_t_steering,fabs(delta_steering[i])/geom.rover_max_steering_velocity);
 
             vel_and_steering(velocity, omega, HDPCConst::DRIVE_MIDDLE_LEFT, -1, 0, geom.rover_width/2.);
@@ -193,18 +196,20 @@ class HDPCDrive {
 
             i = HDPCConst::STEERING_REAR_LEFT;
             vel_and_steering(velocity, omega, HDPCConst::DRIVE_REAR_LEFT, i, -geom.rover_center_to_rear, geom.rover_width/2.);
-            delta_steering[i] = commands.position[i] - motors.position[i];
+            delta_steering[i] = fabs(commands.position[i] - motors.position[i]);
             max_t_steering = std::max(max_t_steering,fabs(delta_steering[i])/geom.rover_max_steering_velocity);
             
             i = HDPCConst::STEERING_REAR_RIGHT;
             vel_and_steering(velocity, omega, HDPCConst::DRIVE_REAR_RIGHT, i, -geom.rover_center_to_rear, -geom.rover_width/2.);
-            delta_steering[i] = commands.position[i] - motors.position[i];
+            delta_steering[i] = fabs(commands.position[i] - motors.position[i]);
             max_t_steering = std::max(max_t_steering,fabs(delta_steering[i])/geom.rover_max_steering_velocity);
 
-            commands.velocity[HDPCConst::STEERING_FRONT_LEFT] = delta_steering[HDPCConst::STEERING_FRONT_LEFT]/max_t_steering;
-            commands.velocity[HDPCConst::STEERING_FRONT_RIGHT] = delta_steering[HDPCConst::STEERING_FRONT_RIGHT]/max_t_steering;
-            commands.velocity[HDPCConst::STEERING_REAR_LEFT] = delta_steering[HDPCConst::STEERING_REAR_LEFT]/max_t_steering;
-            commands.velocity[HDPCConst::STEERING_REAR_RIGHT] = delta_steering[HDPCConst::STEERING_REAR_RIGHT]/max_t_steering;
+            if (synchronise_steering) {
+                commands.velocity[HDPCConst::STEERING_FRONT_LEFT] = delta_steering[HDPCConst::STEERING_FRONT_LEFT]/max_t_steering;
+                commands.velocity[HDPCConst::STEERING_FRONT_RIGHT] = delta_steering[HDPCConst::STEERING_FRONT_RIGHT]/max_t_steering;
+                commands.velocity[HDPCConst::STEERING_REAR_LEFT] = delta_steering[HDPCConst::STEERING_REAR_LEFT]/max_t_steering;
+                commands.velocity[HDPCConst::STEERING_REAR_RIGHT] = delta_steering[HDPCConst::STEERING_REAR_RIGHT]/max_t_steering;
+            }
             
         }
 
@@ -346,8 +351,7 @@ class HDPCDrive {
             // TODO: change default value to something that makes sense
             nh.param("max_rotation_speed_rad_per_s",max_rotation_speed_rad_per_s,1.0);
             nh.param("max_linear_speed_m_per_s",max_linear_speed_m_per_s,0.9);
-
-            elevation_boundary_rad = atan(geom.rover_width/2);
+            nh.param("synchronise_steering",synchronise_steering,false);
 
             watchdog = 0;
             control_mode = HDPCConst::MODE_INIT;
