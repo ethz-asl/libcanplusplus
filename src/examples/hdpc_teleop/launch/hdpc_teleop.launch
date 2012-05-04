@@ -10,8 +10,8 @@
         <param name="max_linear_velocity" value="0.9" />
         <param name="initial_const_velocity_m_s" value="0.0" />
         <param name="const_velocity_increment_m_s" value="0.1" />
-        <param name="dd_wheel_velocity_rad_s" value="0.0175" />
-        <param name="dd_steering_increment_rad" value="0.0175" />
+        <param name="dd_wheel_velocity_rad_s" value="0.0174533" />
+        <param name="dd_steering_increment_rad" value="0.0174533" />
     </node>
     
 </launch>

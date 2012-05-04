@@ -41,6 +41,7 @@ class HDPCController
         double const_velocity_increment_m_s;
         double dd_wheel_velocity_rad_s;
         double dd_steering_increment_rad;
+        double dd_steering_actual_value_rad;
 
         bool firstctrl,gotjoy;
     public:
@@ -55,8 +56,8 @@ class HDPCController
             nh.param("max_rotational_velocity",max_rotational_velocity,0.5);
             nh.param("initial_const_velocity_m_s",initial_const_velocity_m_s,0.0);
             nh.param("const_velocity_increment_m_s",const_velocity_increment_m_s,0.1);
-            nh.param("dd_wheel_velocity_rad_s",dd_wheel_velocity_rad_s,0.0175);
-            nh.param("dd_steering_increment_rad",dd_steering_increment_rad,0.0175);
+            nh.param("dd_wheel_velocity_rad_s",dd_wheel_velocity_rad_s,0.0174533);
+            nh.param("dd_steering_increment_rad",dd_steering_increment_rad,0.0174533);
 
             setModeClt = nh.serviceClient<hdpc_drive::SetControlMode>("/hdpc_drive/set_control_mode");
             state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/changeState");
@@ -104,9 +105,9 @@ class HDPCController
 
         void setdd(hdpc_drive::DirectDrive & ddmsg, int axle, double value) {
             if (axle < 6) {
-                ddmsg.velocities_rad_per_sec[axle] = value*dd_wheel_velocity_rad_s;
+                ddmsg.velocities_rad_per_sec[axle] = value;//*dd_wheel_velocity_rad_s;
             } else if (axle < 10) {
-                ddmsg.steering_rad[axle-6] = value*dd_steering_increment_rad;
+                ddmsg.steering_rad[axle-6] = value;//*dd_steering_increment_rad;
             }
             directdrive_pub.publish(ddmsg);
         }
@@ -174,16 +175,32 @@ class HDPCController
                             ROS_INFO("Leaving DirectDrive mode");
                         } else if (joystate.buttons[3] && (tnow - last_dd_cmd > 0.5)) {
                             setdd(ddmsg,current_axle,0.0);
+                            dd_steering_actual_value_rad = 0.0;
                             current_axle = (current_axle - 1) % 10;
                             last_dd_cmd = tnow;
                             ROS_INFO("DirectDrive: controlling DoF %d",current_axle);
                         } else if (joystate.buttons[4] && (tnow - last_dd_cmd > 0.5)) {
                             setdd(ddmsg,current_axle,0.0);
+                            dd_steering_actual_value_rad = 0.0;
                             current_axle = (current_axle + 1) % 10;
                             last_dd_cmd = tnow;
                             ROS_INFO("DirectDrive: controlling DoF %d",current_axle);
                         } else {
-                            setdd(ddmsg,current_axle,joystate.axes[1]);
+                        	if (current_axle < 6) {
+                        		ddmsg.velocities_rad_per_sec[current_axle] = joystate.axes[1]*dd_wheel_velocity_rad_s;
+                        	} else if (current_axle < 10) {
+                        		if (joystate.buttons[8] && dd_steering_actual_value_rad < 1.58825 && (tnow - last_dd_cmd > 0.5)) {
+                        			dd_steering_actual_value_rad += dd_steering_increment_rad;
+                        			last_dd_cmd = tnow;
+                        		} else if (joystate.buttons[7] && dd_steering_actual_value_rad > -1.58825 && (tnow - last_dd_cmd > 0.5)) {
+                        			dd_steering_actual_value_rad -= dd_steering_increment_rad;
+                        			last_dd_cmd = tnow;
+                        		}
+                        		ddmsg.steering_rad[current_axle-6] = dd_steering_actual_value_rad;
+                        	}
+                        	directdrive_pub.publish(ddmsg);
+                            //setdd(ddmsg,current_axle,joystate.axes[1]);
+
                         }
                         break;
                     case HDPCConst::MODE_ACKERMANN:
@@ -200,6 +217,8 @@ class HDPCController
                             // rotation speed in [-0.5,0.5] m/s
                             // Check for triggered const velocity button
                             if (joystate.buttons[6] && (tnow-last_const_velocity_cmd)>0.5){
+                            	if (is_const_velocity) ROS_INFO("Leaving const velocity mode");
+                            	else ROS_INFO("Entering const velocity mode");
                             	is_const_velocity = !is_const_velocity;
                             	last_const_velocity_cmd = tnow;
                             	current_const_velocity_m_s = initial_const_velocity_m_s;
