@@ -38,6 +38,8 @@ class HDPCController
         double max_linear_velocity;
         double max_rotational_velocity;
         double const_speed_m_s;
+        double const_speed_increment_m_s;
+        //double const_speed_increment_m_s;
 
         bool firstctrl,gotjoy;
     public:
@@ -50,7 +52,9 @@ class HDPCController
 
             nh.param("max_linear_velocity",max_linear_velocity,0.5);
             nh.param("max_rotational_velocity",max_rotational_velocity,0.5);
-            nh.param("const_speed_m_s",const_speed_m_s,0.2);
+            nh.param("const_speed_m_s",const_speed_m_s,0.0);
+            nh.param("const_speed_increment_m_s",const_speed_increment_m_s,0.1);
+
 
             setModeClt = nh.serviceClient<hdpc_drive::SetControlMode>("/hdpc_drive/set_control_mode");
             state_machine_client = nh.serviceClient<hdpc_com::ChangeStateMachine>("/hdpc_com/changeState");
@@ -110,7 +114,10 @@ class HDPCController
             unsigned int current_axle = 0;
             int prev_control_mode = -1;
             double rotation_elevation = 0.0;
-            double tnow,last_dd_cmd = -1, last_reset_cmd=-5;
+            double tnow, last_dd_cmd = -1, last_reset_cmd = -5;
+            double last_const_speed_cmd = -1,last_speed_incr_cmd = -1;
+            bool is_const_speed = false;
+            double current_const_speed_m_s = const_speed_m_s;
 
             while (ros::ok()) {
                 looprate.sleep();
@@ -189,8 +196,26 @@ class HDPCController
                         } else {
                             geometry_msgs::Twist msg;
                             // rotation speed in [-0.5,0.5] m/s
-                            if (joystate.buttons[7])
-                            	msg.linear.x = const_speed_m_s;
+                            // Check for triggered const speed button
+                            if (joystate.buttons[6] && (tnow-last_const_speed_cmd)>0.5){
+                            	is_const_speed = !is_const_speed;
+                            	last_const_speed_cmd = tnow;
+                            	current_const_speed_m_s = const_speed_m_s;
+                            }
+
+                            if (is_const_speed){
+                            	if (joystate.buttons[8] && (tnow-last_speed_incr_cmd)>0.5){
+                            		if (current_const_speed_m_s <= max_linear_velocity-const_speed_increment_m_s)
+                            			current_const_speed_m_s += const_speed_increment_m_s;
+                            		last_speed_incr_cmd = tnow;
+                            	}
+                            	if (joystate.buttons[7]&& (tnow-last_speed_incr_cmd)>0.5){
+                            	    if (current_const_speed_m_s >= -max_linear_velocity+const_speed_increment_m_s)
+                            	    	current_const_speed_m_s -= const_speed_increment_m_s;
+                            	    last_speed_incr_cmd = tnow;
+                            	}
+                            	msg.linear.x = current_const_speed_m_s;
+                            }
                             else
                             	msg.linear.x = joystate.axes[1] * max_linear_velocity;
 
@@ -273,7 +298,7 @@ class HDPCController
 int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "hdpc_teleop");
-    ros::NodeHandle nh;
+    ros::NodeHandle nh("~");
 
     HDPCController api(nh);
 

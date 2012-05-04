@@ -20,8 +20,9 @@
 
     <node type="hdpc_teleop" pkg="hdpc_teleop" name="hdpc_teleop" output="screen">
         <param name="max_rotational_velocity" value="0.5" />
-        <param name="max_linear_velocity" value="1.0" />
-        <param name="const_speed_m_s" value="0.2" />
+        <param name="max_linear_velocity" value="0.9" />
+        <param name="const_speed_m_s" value="0.0" />
+        <param name="const_speed_increment_m_s" value="0.1" />
     </node>
 
     
