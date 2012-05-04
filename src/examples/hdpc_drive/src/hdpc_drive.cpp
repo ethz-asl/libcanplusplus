@@ -37,10 +37,14 @@ class HDPCDrive {
         ros::Publisher status_pub;
 
         unsigned int control_mode;
+        double desired_elevation;
         static const unsigned int WATCHDOG_INIT = 100;
         unsigned int watchdog;
         hdpc_com::Readings motors;
         hdpc_com::Commands commands;
+
+        static inline double SQR(double x) {return x*x;}
+        static inline double SGN(double x) {return (x<0)?-1:1;}
 
         void stop_rover() {
             double max_wheel_offset = 0;
@@ -74,12 +78,23 @@ class HDPCDrive {
             }
         }
 
-        void init_rotation() {
+        void prepare_steering(double elevation_rad) {
             double desired[10];
-            desired[HDPCConst::STEERING_FRONT_LEFT] = remainder(-atan2(geom.rover_center_to_front,geom.rover_width/2.),M_PI);
-            desired[HDPCConst::STEERING_FRONT_RIGHT] = remainder(-atan2(geom.rover_center_to_front,-geom.rover_width/2.),M_PI);
-            desired[HDPCConst::STEERING_REAR_LEFT] = remainder(-atan2(-geom.rover_center_to_rear,geom.rover_width/2.),M_PI);
-            desired[HDPCConst::STEERING_REAR_RIGHT] = remainder(-atan2(-geom.rover_center_to_rear,-geom.rover_width/2.),M_PI);
+            elevation_rad = remainder(elevation_rad,M_PI);
+            double elevation_limit = atan(geom.rover_width/2);
+            double elevation_limit_1 = atan((geom.rover_width - geom.rover_wheel_width)/2);
+            double elevation_limit_2 = atan((geom.rover_width + geom.rover_wheel_width)/2);
+            if ((fabs(elevation_rad) > elevation_limit_1) && (fabs(elevation_rad) < elevation_limit_2)) {
+                if (elevation_rad>=elevation_limit) {
+                    elevation_rad = elevation_limit_2*SGN(elevation_rad);
+                } else {
+                    elevation_rad = elevation_limit_1*SGN(elevation_rad);
+                }
+            }
+            desired[HDPCConst::STEERING_FRONT_LEFT] = remainder(-atan2(geom.rover_center_to_front,tan(elevation_rad) - geom.rover_width/2.),M_PI);
+            desired[HDPCConst::STEERING_FRONT_RIGHT] = remainder(-atan2(geom.rover_center_to_front,tan(elevation_rad) + geom.rover_width/2.),M_PI);
+            desired[HDPCConst::STEERING_REAR_LEFT] = remainder(-atan2(-geom.rover_center_to_rear,tan(elevation_rad) - geom.rover_width/2.),M_PI);
+            desired[HDPCConst::STEERING_REAR_RIGHT] = remainder(-atan2(-geom.rover_center_to_rear,tan(elevation_rad) + geom.rover_width/2.),M_PI);
 
             double max_wheel_offset = 0;
             for (unsigned int i=6;i<10;i++) {
@@ -98,13 +113,15 @@ class HDPCDrive {
                     commands.position[i] = desired[i];
                     commands.velocity[i] = 0.0;
                 }
-            } else if (control_mode != HDPCConst::MODE_ROTATION) {
+            } else if (control_mode == HDPCConst::MODE_INIT_ROTATION) {
                 control_mode = HDPCConst::MODE_ROTATION;
                 ROS_INFO("HDPC Drive: Rover entered ROTATION mode");
+            } else  if (control_mode == HDPCConst::MODE_INIT_ACKERMANN) {
+                control_mode = HDPCConst::MODE_ACKERMANN;
+                ROS_INFO("HDPC Drive: Rover entered ACKERMANN mode");
             }
         }
 
-        static inline double SQR(double x) {return x*x;}
 
         void vel_and_steering(float v_c, float omega_c, unsigned int i_vel, signed int i_steer, float x_w, float y_w) {
             if ((fabs(omega_c) < 1e-2) && (fabs(v_c) < 1e-2)) {
@@ -147,6 +164,7 @@ class HDPCDrive {
             switch (control_mode) {
                 case HDPCConst::MODE_INIT:
                 case HDPCConst::MODE_DIRECT_DRIVE:
+                case HDPCConst::MODE_INIT_ACKERMANN:
                 case HDPCConst::MODE_INIT_ROTATION:
                     ROS_WARN("Ignored drive command in current mode");
                     return;
@@ -256,15 +274,18 @@ class HDPCDrive {
                             res.result = false;
                         } else {
                             control_mode = HDPCConst::MODE_INIT_ROTATION;
+                            desired_elevation = req.desired_elevation;
                             ROS_INFO("Entering Init Rotation mode");
                         }
                         break;
+                    case HDPCConst::MODE_INIT_ACKERMANN:
                     case HDPCConst::MODE_ACKERMANN:
                         if (control_mode != HDPCConst::MODE_STOPPED) {
                             ROS_WARN("Cannot switch to ACKERMANN or ROTATION from any other mode than STOPPED");
                             res.result = false;
                         } else {
-                            control_mode = req.request_mode;
+                            control_mode = HDPCConst::MODE_INIT_ACKERMANN;
+                            desired_elevation = req.desired_elevation;
                             ROS_INFO("Entering Ackermann mode");
                         }
                         break;
@@ -354,6 +375,7 @@ class HDPCDrive {
             nh.param("synchronise_steering",synchronise_steering,false);
 
             watchdog = 0;
+            desired_elevation = M_PI/2;
             control_mode = HDPCConst::MODE_INIT;
             commands.header.stamp = ros::Time::now();
             for (unsigned int i=0;i<10;i++) {
@@ -405,8 +427,12 @@ class HDPCDrive {
                         stop_rover();
                         command_pub.publish(commands);
                         break;
+                    case HDPCConst::MODE_INIT_ACKERMANN:
+                        prepare_steering(desired_elevation);
+                        command_pub.publish(commands);
+                        break;
                     case HDPCConst::MODE_INIT_ROTATION:
-                        init_rotation();
+                        prepare_steering(desired_elevation);
                         command_pub.publish(commands);
                         break;
                     case HDPCConst::MODE_ROTATION:

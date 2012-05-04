@@ -1,6 +1,13 @@
 # constants defined in HDPCConst.msg
 
 uint8 request_mode
+
+# desired rotation radius, represented as atan(r)
+# Only used when request_mode is (INIT_)ROTATION or (INIT_)ACKERMANN
+float32 ELEVATION_STRAIGHT_FORWARD=1.5708
+float32 ELEVATION_ROTATION_ON_THE_SPOT=0.0
+
+float32 desired_elevation
 ---
 bool result
 uint8 result_mode

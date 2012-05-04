@@ -79,9 +79,10 @@ class HDPCController
             gotjoy = true;
         }
 
-        void set_control_mode(unsigned int mode) {
+        void set_control_mode(unsigned int mode, double elevation=M_PI/2) {
             hdpc_drive::SetControlMode req;
             req.request.request_mode = mode;
+            req.request.desired_elevation = elevation;
             if (!setModeClt.call(req)) {
                 ROS_ERROR("Set control mode %d failed",mode);
             }
@@ -135,12 +136,12 @@ class HDPCController
                         }
                         if (joystate.buttons[1]) {
                             rotation_elevation = M_PI/2;
-                            set_control_mode(HDPCConst::MODE_ACKERMANN);
+                            set_control_mode(HDPCConst::MODE_INIT_ACKERMANN, rotation_elevation);
                             ROS_INFO("Entering Ackermann mode.");
                             ROS_INFO("Press 0 to exit. Velocity: Axis 0. Steering: Axis 1");
                         } else if (joystate.buttons[2]) {
                             rotation_elevation = 0.0;
-                            set_control_mode(HDPCConst::MODE_ROTATION);
+                            set_control_mode(HDPCConst::MODE_INIT_ROTATION, rotation_elevation);
                             ROS_INFO("Entering Rotation mode.");
                             ROS_INFO("Press 0 to exit. Rot. Velocity: Axis 1.");
                             ROS_INFO("ICR Positon: [-/0/+] wiht button [3/2/4]");
@@ -207,8 +208,12 @@ class HDPCController
                             if ((rotation_elevation < 0) && (rotation_elevation > -elevation_boundary_rad)) {
                                 rotation_elevation = -(elevation_boundary_rad + 0.05);
                             }
-                            msg.angular.z = msg.linear.x / tan(rotation_elevation);
-                            control_pub.publish(msg);
+                            if (fabs(msg.linear.x)<1e-2) {
+                                set_control_mode(HDPCConst::MODE_INIT_ACKERMANN, rotation_elevation);
+                            } else {
+                                msg.angular.z = msg.linear.x / tan(rotation_elevation);
+                                control_pub.publish(msg);
+                            }
                         }
                         break;
                     case HDPCConst::MODE_ROTATION:
@@ -237,8 +242,20 @@ class HDPCController
                             } else if (joystate.buttons[2]) {
                                 rotation_elevation = 0.;
                             }
-                            msg.linear.x = msg.angular.z * tan(rotation_elevation);
-                            control_pub.publish(msg);
+                            if (fabs(msg.angular.z)<1e-2) {
+                                set_control_mode(HDPCConst::MODE_INIT_ROTATION, rotation_elevation);
+                            } else {
+                                msg.linear.x = msg.angular.z * tan(rotation_elevation);
+                                control_pub.publish(msg);
+                            }
+                        }
+                        break;
+                    case HDPCConst::MODE_INIT_ACKERMANN:
+                    case HDPCConst::MODE_INIT_ROTATION:
+                        if (joystate.buttons[0]) {
+                            // Stop
+                            set_control_mode(HDPCConst::MODE_STOPPED);
+                            ROS_INFO("Leaving Current mode");
                         }
                         break;
                 }
