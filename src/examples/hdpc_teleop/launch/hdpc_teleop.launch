@@ -1,16 +1,17 @@
 <launch>
     <!-- We're not setting the parameter here. It is expected that the drive node will have set them up correctly-->
 
-    <!--<node type="joy_node" pkg="joy" name="joy" output="screen">
+    <node type="joy_node" pkg="joy" name="joy" output="screen">
         <param name="autorepeat_rate" value="10"/>
-    </node>-->
+        <param name="dev" value="/dev/input/js1"/>
+    </node>
 
     <node type="hdpc_teleop" pkg="hdpc_teleop" name="hdpc_teleop" output="screen">
         <param name="max_rotational_velocity" value="0.5" />
         <param name="max_linear_velocity" value="0.9" />
         <param name="initial_const_velocity_m_s" value="0.0" />
         <param name="const_velocity_increment_m_s" value="0.1" />
-        <param name="dd_wheel_velocity_rad_s" value="0.0174533" />
+        <param name="dd_wheel_velocity_rad_s" value="-0.0174533" />
         <param name="dd_steering_increment_rad" value="0.0174533" />
     </node>
     

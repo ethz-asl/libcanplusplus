@@ -121,6 +121,7 @@ class HDPCController
             double last_const_velocity_cmd = -1,last_velocity_incr_cmd = -1;
             bool is_const_velocity = false;
             double current_const_velocity_m_s = initial_const_velocity_m_s;
+            double sw_start_time=0, sw_current_time=0;
 
             while (ros::ok()) {
                 bool elevation_change = false;
@@ -169,6 +170,7 @@ class HDPCController
                         if (prev_control_mode != state.control_mode) {
                             ROS_INFO("Entered in mode DIRECT DRIVE");
                             prev_control_mode = state.control_mode;
+                            is_const_velocity=0;
                         }
                         if (joystate.buttons[0]) {
                             // Stop
@@ -186,15 +188,39 @@ class HDPCController
                             current_axle = (current_axle + 1) % 10;
                             last_dd_cmd = tnow;
                             ROS_INFO("DirectDrive: controlling DoF %d",current_axle);
-                        } else {
+                        } else if (joystate.buttons[6] && (tnow-last_const_velocity_cmd)>0.5){
+                            ROS_INFO("Entering const velocity mode");
+                            is_const_velocity = !is_const_velocity;
+                            last_const_velocity_cmd = tnow;
+                            sw_start_time = tnow;
+                            }
+                        else {
                         	if (current_axle < 6) {
-                        		ddmsg.velocities_rad_per_sec[current_axle] = joystate.axes[1]*dd_wheel_velocity_rad_s;
+                        		if (is_const_velocity){
+                        			for (int i_wheel = 0; i_wheel < 6; i_wheel++){
+                        				ddmsg.velocities_rad_per_sec[i_wheel] = dd_wheel_velocity_rad_s;
+                        			}
+                        			sw_current_time = tnow - sw_start_time;
+                        			ROS_INFO("Current time: %f",sw_current_time);
+                        			if (sw_current_time >= 180) {
+                        				is_const_velocity = 0;
+                        				for (int i_wheel = 0; i_wheel < 6; i_wheel++){
+                        					ddmsg.velocities_rad_per_sec[i_wheel] = 0.0;
+                        				}
+                        				ROS_INFO("Leaving const velocity mode");
+                        			}
+                        		} else
+                        			ddmsg.velocities_rad_per_sec[current_axle] = joystate.axes[1]*dd_wheel_velocity_rad_s;
+                        		//sw_current_time = tnow-sw_start_time;
+                        		//ROS_INFO("TIME: %f", sw_current_time);
                         	} else if (current_axle < 10) {
                         		if (joystate.buttons[8] && dd_steering_actual_value_rad < 1.58825 && (tnow - last_dd_cmd > 0.5)) {
                         			dd_steering_actual_value_rad += dd_steering_increment_rad;
+                        			ROS_INFO("Actual commanded angle: %f",dd_steering_actual_value_rad*180/M_PI);
                         			last_dd_cmd = tnow;
                         		} else if (joystate.buttons[7] && dd_steering_actual_value_rad > -1.58825 && (tnow - last_dd_cmd > 0.5)) {
                         			dd_steering_actual_value_rad -= dd_steering_increment_rad;
+                        			ROS_INFO("Actual commanded angle: %f",dd_steering_actual_value_rad*180/M_PI);
                         			last_dd_cmd = tnow;
                         		}
                         		ddmsg.steering_rad[current_axle-6] = dd_steering_actual_value_rad;
@@ -208,6 +234,7 @@ class HDPCController
                         if (prev_control_mode != state.control_mode) {
                             ROS_INFO("Entered in mode ACKERMANN");
                             prev_control_mode = state.control_mode;
+                            is_const_velocity=0;
                         }
                         if (joystate.buttons[0]) {
                             // Stop
