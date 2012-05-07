@@ -123,6 +123,7 @@ class HDPCController
             double current_const_velocity_m_s = initial_const_velocity_m_s;
 
             while (ros::ok()) {
+                bool elevation_change = false;
                 looprate.sleep();
                 ros::spinOnce();
                 tnow = ros::Time::now().toSec();
@@ -241,10 +242,13 @@ class HDPCController
                             	msg.linear.x = joystate.axes[1] * max_linear_velocity;
 
                             if (joystate.buttons[3]) {
+                                elevation_change = true;
                                 rotation_elevation -= 0.05;
                             } else if (joystate.buttons[4]) {
+                                elevation_change = true;
                                 rotation_elevation += 0.05;
                             } else if (joystate.buttons[2]) {
+                                elevation_change = true;
                                 rotation_elevation = M_PI/2;
                             }
                             rotation_elevation = remainder(rotation_elevation, M_PI);
@@ -256,7 +260,7 @@ class HDPCController
                             }
                             msg.angular.z = msg.linear.x / tan(rotation_elevation);
                             control_pub.publish(msg);
-                            if (fabs(msg.linear.x)<1e-3) {
+                            if (elevation_change && (fabs(msg.linear.x)<1e-3)) {
                                 set_control_mode(HDPCConst::MODE_INIT_ACKERMANN, rotation_elevation);
                             }
                         }
@@ -275,21 +279,24 @@ class HDPCController
                             // rotation speed in [-1,1] rad/s
                             msg.angular.z = joystate.axes[0] * max_rotational_velocity; 
                             if (joystate.buttons[3]) {
+                                elevation_change = true;
                                 rotation_elevation += 0.05;
                                 if (rotation_elevation > elevation_boundary_rad) {
                                     rotation_elevation = elevation_boundary_rad-0.05;
                                 }
                             } else if (joystate.buttons[4]) {
+                                elevation_change = true;
                                 rotation_elevation -= 0.05;
                                 if (rotation_elevation < -elevation_boundary_rad) {
                                     rotation_elevation = -elevation_boundary_rad+0.05;
                                 }
                             } else if (joystate.buttons[2]) {
+                                elevation_change = true;
                                 rotation_elevation = 0.;
                             }
                             msg.linear.x = msg.angular.z * tan(rotation_elevation);
                             control_pub.publish(msg);
-                            if (fabs(msg.angular.z)<1e-3) {
+                            if (elevation_change && (fabs(msg.angular.z)<1e-3)) {
                                 set_control_mode(HDPCConst::MODE_INIT_ROTATION, rotation_elevation);
                             }
                         }
