@@ -421,9 +421,30 @@ class HDPCDrive {
         }
         
         void main_loop() {
-            ros::Rate rate(50);
+            ros::Rate rate(40); //50
+            hdpc_com::ChangeStateMachine change_state;
+
             while (ros::ok()) {
                 ros::spinOnce();
+
+                // Check for Fault State
+                change_state.request.event = EVENT_READ_STATE;
+                if (!state_machine_client.call(change_state)) {
+                	ROS_WARN("Request of state machine failed!");
+                }
+
+                switch (change_state.response.state){
+                	case SM_INIT:
+                	case SM_STOP:
+                	case SM_DRIVE:
+                		break;
+                	case SM_FAULT:
+                		control_mode = HDPCConst::MODE_STOPPED;
+                		ROS_INFO("HDPC_COM in FAULT state, going to STOPPED MODE");
+                		break;
+                }
+
+
                 switch (control_mode) {
                     case HDPCConst::MODE_INIT:
                         stop_rover();
