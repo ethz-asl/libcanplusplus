@@ -5,6 +5,7 @@
     <node type="hdpc_drive" pkg="hdpc_drive" name="hdpc_drive" output="screen">
         <param name="max_rotation_speed_rad_per_s" value="1.0" />
         <param name="max_linear_speed_m_per_s" value="0.9" />
+        <param name="synchronise_steering" value="false" />
     </node>
 
     

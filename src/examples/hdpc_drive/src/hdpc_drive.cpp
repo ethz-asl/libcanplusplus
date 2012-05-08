@@ -258,6 +258,8 @@ class HDPCDrive {
                     // eventually if required
                     break;
                 case SM_FAULT:
+                	ROS_WARN("State machine is in FAULT state. Call RESET!");
+                	break;
                 default:
                     ROS_WARN("State machine is in faulty or unknown state. Trying calling RESET");
                     return false;
@@ -276,7 +278,7 @@ class HDPCDrive {
                         } else {
                             control_mode = HDPCConst::MODE_INIT_ROTATION;
                             desired_elevation = req.desired_elevation;
-                            // ROS_INFO("Entering Init Rotation mode");
+                            //ROS_INFO("Entering Init Rotation mode");
                         }
                         break;
                     case HDPCConst::MODE_INIT_ACKERMANN:
@@ -288,7 +290,7 @@ class HDPCDrive {
                         } else {
                             control_mode = HDPCConst::MODE_INIT_ACKERMANN;
                             desired_elevation = req.desired_elevation;
-                            // ROS_INFO("Entering Init Ackermann mode");
+                            //ROS_INFO("Entering Init Ackermann mode");
                         }
                         break;
                     case HDPCConst::MODE_DIRECT_DRIVE:
@@ -439,8 +441,10 @@ class HDPCDrive {
                 	case SM_DRIVE:
                 		break;
                 	case SM_FAULT:
-                		control_mode = HDPCConst::MODE_STOPPED;
-                		ROS_INFO("HDPC_COM in FAULT state, going to STOPPED MODE");
+                		if (control_mode!=HDPCConst::MODE_STOPPED){
+                			control_mode = HDPCConst::MODE_STOPPED;
+                			ROS_INFO("HDPC_COM in FAULT state, going to STOPPED MODE");
+                		}
                 		break;
                 }
 
