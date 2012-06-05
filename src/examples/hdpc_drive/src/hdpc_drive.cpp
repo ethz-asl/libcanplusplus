@@ -25,6 +25,7 @@ class HDPCDrive {
         double max_rotation_speed_rad_per_s;
         double max_linear_speed_m_per_s;
         bool synchronise_steering;
+        bool zero_on_init;
     protected:
         ros::Publisher command_pub;
         ros::Subscriber reading_sub;
@@ -52,19 +53,26 @@ class HDPCDrive {
                 max_wheel_offset = std::max(fabs(motors.position[i]),max_wheel_offset);
             }
 
-            if (max_wheel_offset > 5e-2) {
-                // ROS_INFO("STOPPING: Max wheel offset: %02f",max_wheel_offset);
-                commands.header.stamp = ros::Time::now();
-                for (unsigned int i=0;i<6;i++) {
-                    commands.isActive[i] = false;
-                    commands.velocity[i] = 0.0;
-                }
+            // ROS_INFO("STOPPING: Max wheel offset: %02f",max_wheel_offset);
+            commands.header.stamp = ros::Time::now();
+            for (unsigned int i=0;i<6;i++) {
+                commands.isActive[i] = false;
+                commands.velocity[i] = 0.0;
+            }
+            for (unsigned int i=6;i<10;i++) {
+                commands.velocity[i] = 0.0;
+            }
+
+            if (zero_on_init && (max_wheel_offset > 5e-2)) {
                 for (unsigned int i=6;i<10;i++) {
                     commands.isActive[i] = true;
                     commands.position[i] = 0.0;
-                    commands.velocity[i] = 0.0;
                 }
             } else if (control_mode != HDPCConst::MODE_STOPPED) {
+                for (unsigned int i=6;i<10;i++) {
+                    commands.isActive[i] = false;
+                    commands.position[i] = motors.position[i];
+                }
                 hdpc_com::ChangeStateMachine change_state;
                 change_state.request.event = EVENT_STOP;
                 state_machine_client.call(change_state);
@@ -77,6 +85,7 @@ class HDPCDrive {
                 }
             }
         }
+
 
         void prepare_steering(double elevation_rad) {
             double desired[10];
@@ -377,6 +386,7 @@ class HDPCDrive {
             nh.param("max_rotation_speed_rad_per_s",max_rotation_speed_rad_per_s,1.0);
             nh.param("max_linear_speed_m_per_s",max_linear_speed_m_per_s,0.9);
             nh.param("synchronise_steering",synchronise_steering,false);
+            nh.param("zero_on_init",zero_on_init,false);
 
             watchdog = 0;
             desired_elevation = M_PI/2;
