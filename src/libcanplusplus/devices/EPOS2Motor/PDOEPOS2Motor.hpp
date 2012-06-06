@@ -6,6 +6,15 @@
  * @version 1.0
  * @ingroup robotCAN
  *
+ * TxPDO1 180
+ * TxPDO2 280
+ * TxPDO3 380
+ * TxPDO4 480
+ * RxPDO1 200
+ * RxPDO2 300
+ * RxPDO3 400
+ * RxPDO4 500
+ *
  */
 
 #ifndef CANPDOS_HPP_
