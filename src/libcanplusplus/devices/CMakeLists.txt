@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 ####################
 ## SUBDIRECTORIES ##
 ####################
-add_subdirectory(EPOS2Motor)
+#add_subdirectory(EPOS2Motor)
 add_subdirectory(ELMOMotor)
 
 

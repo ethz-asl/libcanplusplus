@@ -115,12 +115,33 @@ public:
 	//! operation (control) mode (velocity, position, current, etc. Use defines above)
 	int operationMode;
 
-	//! identifier of shared memory of RxPDO
-	int rxPDOSMId_;
-	//! identifier of shared memory of TxPDO
-	int txPDOSMId_;
+	//! identifier of shared memory of the first RxPDO
+	int rxPDO1SMId_;
+
+	//! identifier of shared memory of the second RxPDO
+	int rxPDO2SMId_;
+
+	//! identifier of shared memory of the third RxPDO
+	int rxPDO3SMId_;
+
+	//! identifier of shared memory of the fourth RxPDO
+	int rxPDO4SMId_;
+
+	//! identifier of shared memory of the first TxPDO
+	int txPDO1SMId_;
+
+	//! identifier of shared memory of the second TxPDO
+	int txPDO2SMId_;
+
+	//! identifier of shared memory of the third TxPDO
+	int txPDO3SMId_;
+
+	//! identifier of shared memory of the fourth TxPDO
+	int txPDO4SMId_;
+
 	//! identifier of shared memory of received SDO
 	int inSDOSMId_;
+
 	//! identifier of shared memory of sent SDO
 	int outSDOSMId_;
 
@@ -131,9 +152,24 @@ public:
 	 * @param inSDOSMId		identifier of shared memory of received SDO
 	 * @param outSDOSMId	identifier of shared memory of sent SDO
 	 */
-	DeviceEPOS2MotorParameters(int rxPDOSMId, int txPDOSMId, int inSDOSMId, int outSDOSMId)
-	:rxPDOSMId_(rxPDOSMId),
-	 txPDOSMId_(txPDOSMId),
+	DeviceEPOS2MotorParameters(int rxPDO1SMId,
+			  	  	  	  	   int rxPDO2SMId,
+			  	  	  	  	   int rxPDO3SMId,
+			  	  	  	  	   int rxPDO4SMId,
+							   int txPDO1SMId,
+							   int txPDO2SMId,
+							   int txPDO3SMId,
+							   int txPDO4SMId,
+							   int inSDOSMId,
+							   int outSDOSMId)
+	:rxPDO1SMId_(rxPDO1SMId),
+	 rxPDO2SMId_(rxPDO2SMId),
+	 rxPDO3SMId_(rxPDO3SMId),
+	 rxPDO4SMId_(rxPDO4SMId),
+	 txPDO1SMId_(txPDO1SMId),
+	 txPDO2SMId_(txPDO2SMId),
+	 txPDO3SMId_(txPDO3SMId),
+	 txPDO4SMId_(txPDO4SMId),
 	 inSDOSMId_(inSDOSMId),
 	 outSDOSMId_(outSDOSMId)
 	{

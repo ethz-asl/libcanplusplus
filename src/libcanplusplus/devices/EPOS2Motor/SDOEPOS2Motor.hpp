@@ -580,7 +580,30 @@ public:
 	{};
 	virtual ~SDOSetPositionSensorPolarity(){};
 };
-
+//////////////////////////////////////////////////////////////////////////////
+class SDOGetEncoderCounterAtIndexPulse: public SDORead
+{
+public:
+	typedef boost::shared_ptr<SDOGetEncoderCounterAtIndexPulse> SDOGetEncoderCounterAtIndexPulsePtr;
+	SDOGetEncoderCounterAtIndexPulse(int inSDOSMId, int outSDOSMId, int nodeId):
+		SDORead(inSDOSMId, outSDOSMId, nodeId, 0x2021, 0x00)
+	{};
+	virtual ~SDOGetEncoderCounterAtIndexPulse(){};
+	virtual bool getEncoderCounterAtIndexPulse(int &encoderCounterAtIndexPulse)
+	{
+		encoderCounterAtIndexPulse = (int)data_;
+		return isReceived_;
+	}
+};
+//////////////////////////////////////////////////////////////////////////////
+class SDOSetMiscellaneousConfiguration: public SDOWrite
+{
+public:
+	SDOSetMiscellaneousConfiguration(int inSDOSMId, int outSDOSMId, int nodeId, int pulse_counting):
+		SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_2_BYTE, 0x2008, 0x00, pulse_counting<<3)
+	{};
+	virtual ~SDOSetMiscellaneousConfiguration(){};
+};
 
 
 /***********************************************************************
@@ -606,6 +629,41 @@ public:
 	virtual ~SDOSetLifeTimeFactor(){};
 };
 
+
+/***********************************************************************
+-------------------- Analog Inputs--------------------------------------
+********************************************************************* **/
+//////////////////////////////////////////////////////////////////////////////
+class SDOGetAnalogInputOne: public SDORead
+{
+public:
+	typedef boost::shared_ptr<SDOGetAnalogInputOne> SDOGetAnalogInputOnePtr;
+	SDOGetAnalogInputOne(int inSDOSMId, int outSDOSMId, int nodeId):
+		SDORead(inSDOSMId, outSDOSMId, nodeId, 0x207C, 0x01)
+	{};
+	virtual ~SDOGetAnalogInputOne(){};
+	virtual bool getAnalog(int &voltage)
+	{
+		voltage = data_;
+		return isReceived_;
+	}
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class SDOGetAnalogInputTwo: public SDORead
+{
+public:
+	typedef boost::shared_ptr<SDOGetAnalogInputTwo> SDOGetAnalogInputTwoPtr;
+	SDOGetAnalogInputTwo(int inSDOSMId, int outSDOSMId, int nodeId):
+		SDORead(inSDOSMId, outSDOSMId, nodeId, 0x207C, 0x01)
+	{};
+	virtual ~SDOGetAnalogInputTwo(){};
+	virtual bool getAnalog(int &voltage)
+	{
+		voltage = data_;
+		return isReceived_;
+	}
+};
 
 /***********************************************************************
 ------------------------------ Utilities --------------------------------

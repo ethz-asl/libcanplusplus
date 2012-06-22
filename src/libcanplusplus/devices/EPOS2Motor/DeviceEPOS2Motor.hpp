@@ -69,6 +69,11 @@ public:
 	 */
 	virtual void configRxPDOVelocity();
 
+	/*! Configures the PDO to send the position limits
+	 * Is invoked by configRxPDOs()
+	 */
+	//virtual void configRxPDOPositionLimits();
+
 	//! Adds the command PDOs to the bus manager
 	virtual void addRxPDOs();
 
@@ -78,11 +83,11 @@ public:
 	/* get information */
 
 	/*! Gets the joint position [rad]
-	 * @return	joint position [rad/s]
+	 * @return	joint position [rad]
 	 */
 	double getPosition();
 
-	/*! Gets the joint velocity [rad]
+	/*! Gets the joint velocity [rad/s]
 	 * @return	joint velocity [rad/s]
 	 */
 	double getVelocity();
@@ -112,11 +117,21 @@ public:
 	 */
 	void setVelocity(double velocity);
 
+	/*! Sets the position limits of the joint per PDO
+	 * Converts the limits to motor position limits
+	 * @param positionLimit_rad array[2] of first and second position limit [rad]
+	 */
+	//void setPositionLimitsPerPDO(double* positionLimit_rad);
+
 	/*! Sets the position limits of the joint
 	 * Converts the limits to motor position limits
 	 * @param positionLimit_rad array[2] of first and second position limit [rad]
 	 */
 	void setPositionLimits(double* positionLimit_rad);
+
+	bool getAnalogInputOne(double& value);
+
+	bool getAnalogInputTwo(double& value);
 
 	//! Enable the EPOS
 	void setEnableMotor();
@@ -132,6 +147,9 @@ protected:
 	//! PDO message to send motor velocity command
 	RxPDOVelocity* rxPDOVelocity_;
 
+	//! PDO message to send motor position limits command
+	//RxPDOPositionLimit* rxPDOPositionLimit_;
+
 	//! device parameters
 	DeviceEPOS2MotorParameters* deviceParams_;
 
@@ -140,6 +158,12 @@ protected:
 
 	//! SDO to read if the EPOS is disabled
 	SDOReadStatusWord::SDOReadStatusWordPtr sdoStatusWordDisabled_;
+
+	//! SDO to read analog input 1
+	SDOGetAnalogInputOne::SDOGetAnalogInputOnePtr sdoAnalogInputOne_;
+
+	//! SDO to read analog input 2
+	SDOGetAnalogInputTwo::SDOGetAnalogInputTwoPtr sdoAnalogInputTwo_;
 };
 
 #endif /* DEVICEEPOS2MOTOR_HPP_ */
