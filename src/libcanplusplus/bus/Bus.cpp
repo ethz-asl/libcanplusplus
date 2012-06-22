@@ -12,7 +12,6 @@
 
 Bus::Bus(int iBus):iBus_(iBus)
 {
-
 	rxPDOManager_ = new PDOManager;
 	txPDOManager_ = new PDOManager;
 	SDOManager_ = new SDOManager(iBus);
@@ -41,8 +40,12 @@ SDOManager* Bus::getSDOManager()
 	return SDOManager_;
 }
 
-
 DeviceManager* Bus::getDeviceManager()
 {
 	return deviceManager_;
+}
+
+int Bus::iBus()
+{
+	return iBus_;
 }

@@ -104,7 +104,7 @@ public:
 	void setValue(int* value);
 
 	/*! Lengtsh of the values in the stack
-	 * @param length	arry of length 8
+	 * @param length array of length 8
 	 */
 	void setLength(int* length);
 

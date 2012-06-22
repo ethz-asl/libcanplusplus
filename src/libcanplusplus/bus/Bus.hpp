@@ -54,6 +54,11 @@ public:
 	 */
 	DeviceManager* getDeviceManager();
 
+	/*! Gets the index of the bus
+	 * @return index of bus
+	 */
+	int iBus();
+
 private:
 	//! PDO manager  that sends the PDOs to the nodes
 	PDOManager* rxPDOManager_;
