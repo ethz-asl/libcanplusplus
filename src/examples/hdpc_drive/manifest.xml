@@ -10,7 +10,6 @@
   <url>http://ros.org/wiki/hdpc_drive</url>
   <depend package="hdpc_com"/>
   <depend package="roscpp"/>
-  <depend package="tf"/>
   <depend package="geometry_msgs"/>
 
 </package>
