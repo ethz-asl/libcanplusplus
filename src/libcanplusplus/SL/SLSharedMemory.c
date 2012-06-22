@@ -28,6 +28,9 @@
 
 
 #define TIME_OUT_NS 1000000000
+#ifndef DEBUG
+#define DEBUG 0
+#endif
 
 
 /* local variables */

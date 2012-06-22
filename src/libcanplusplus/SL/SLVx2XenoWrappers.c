@@ -27,7 +27,12 @@
 #include "sys/time.h"
 #include "errno.h"
 
-#include "SLVxWrapper.hpp"
+#ifdef USE_SL_FUNCTIONS
+#include "SL_vx_wrappers.h"
+#else
+	#include "SLVxWrapper.hpp"
+#endif
+
 
 
 #ifdef __cplusplus

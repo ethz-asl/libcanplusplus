@@ -46,17 +46,25 @@ int SDOManager::getSize()
 
 SDOMsg* SDOManager::getSDO(unsigned int index)
 {
-//	try {
-//		if (index >= sdos_.size()) {
-//			std::string error = "SDOManager: Could not get SDO with index "
-//								+ boost::lexical_cast<std::string>(index) + "!";
-//			throw std::out_of_range(error);
-//		}
-//		return &(sdos_[index]);
-//
-//	} catch (std::exception& e) {
-//		std::cout << e.what() << std::endl;
-//	}
+	std::list<SDOMsgPtr>::iterator iterSDOList;
+	unsigned int counter = 0;
+	try {
+		if (index >= sdos_.size()) {
+			std::string error = "SDOManager: Could not get SDO with index "
+								+ boost::lexical_cast<std::string>(index) + "!";
+			throw std::out_of_range(error);
+		}
+
+		for (iterSDOList = sdos_.begin(); iterSDOList != sdos_.end(); iterSDOList++) {
+		  if (counter == index) {
+			  return iterSDOList->get();
+		  }
+		  counter++;
+		}
+
+	} catch (std::exception& e) {
+		std::cout << e.what() << std::endl;
+	}
 	return NULL;
 }
 

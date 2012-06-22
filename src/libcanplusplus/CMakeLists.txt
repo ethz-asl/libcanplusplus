@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-project(CAN++)
+#project(CAN++)
 
 SET(LIBNAME CAN++)	 #Name of the library that will be generated
 
@@ -24,15 +24,16 @@ configure_file (
   "${CMAKE_CURRENT_SOURCE_DIR}/LibCANConfig.h.in"
   "${PROJECT_SOURCE_DIR}/include/LibCANConfig.h"
 )
-
+  #"${PROJECT_SOURCE_DIR}/include/LibCANConfig.h"
 find_package(Boost REQUIRED)
 
 
 ################
 ### INCLUDES ###
 ################
-set(libCAN_INCL ${libCAN_INCL}
-
+set(libCAN_INCL ${libCAN_INCL} 
+	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${PROJECT_SOURCE_DIR}/include
 PARENT_SCOPE)
 
 if(COMPILE_XENOMAI)
