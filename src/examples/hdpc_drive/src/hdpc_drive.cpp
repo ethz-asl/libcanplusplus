@@ -6,6 +6,7 @@
 #include <geometry_msgs/Twist.h>
 #include <hdpc_drive/DirectDrive.h>
 #include <hdpc_drive/Status.h>
+#include <hdpc_drive/HDPCModes.h>
 
 #include <hdpc_com/HDPCConst.h>
 #include <hdpc_com/ChangeStateMachine.h>
@@ -68,7 +69,7 @@ class HDPCDrive {
                     commands.isActive[i] = true;
                     commands.position[i] = 0.0;
                 }
-            } else if (control_mode != HDPCConst::MODE_STOPPED) {
+            } else if (control_mode != HDPCModes::MODE_STOPPED) {
                 for (unsigned int i=6;i<10;i++) {
                     commands.isActive[i] = false;
                     commands.position[i] = motors.position[i];
@@ -77,7 +78,7 @@ class HDPCDrive {
                 change_state.request.event = EVENT_STOP;
                 state_machine_client.call(change_state);
 
-                control_mode = HDPCConst::MODE_STOPPED;
+                control_mode = HDPCModes::MODE_STOPPED;
                 if (watchdog == 0) {
                     ROS_INFO("HDPC Drive: Rover entered STOPPED mode on watchdog");
                 } else {
@@ -93,10 +94,10 @@ class HDPCDrive {
             double elevation_limit_1 = atan((geom.rover_width - geom.rover_wheel_width)/2);
             double elevation_limit_2 = atan((geom.rover_width + geom.rover_wheel_width)/2);
             if ((fabs(elevation_rad) > elevation_limit_1) && (fabs(elevation_rad) < elevation_limit_2)) {
-                if (control_mode == HDPCConst::MODE_INIT_ROTATION) {
+                if (control_mode == HDPCModes::MODE_INIT_ROTATION) {
                     elevation_rad = elevation_limit_1*SGN(elevation_rad);
                 } 
-                if (control_mode == HDPCConst::MODE_INIT_ACKERMANN) {
+                if (control_mode == HDPCModes::MODE_INIT_ACKERMANN) {
                     elevation_rad = elevation_limit_2*SGN(elevation_rad);
                 }
             }
@@ -122,11 +123,11 @@ class HDPCDrive {
                     commands.position[i] = desired[i];
                     commands.velocity[i] = 0.0;
                 }
-            } else if (control_mode == HDPCConst::MODE_INIT_ROTATION) {
-                control_mode = HDPCConst::MODE_ROTATION;
+            } else if (control_mode == HDPCModes::MODE_INIT_ROTATION) {
+                control_mode = HDPCModes::MODE_ROTATION;
                 // ROS_INFO("HDPC Drive: Rover entered ROTATION mode");
-            } else  if (control_mode == HDPCConst::MODE_INIT_ACKERMANN) {
-                control_mode = HDPCConst::MODE_ACKERMANN;
+            } else  if (control_mode == HDPCModes::MODE_INIT_ACKERMANN) {
+                control_mode = HDPCModes::MODE_ACKERMANN;
                 // ROS_INFO("HDPC Drive: Rover entered ACKERMANN mode");
             }
         }
@@ -171,14 +172,14 @@ class HDPCDrive {
             }
             double r = velocity / omega;
             switch (control_mode) {
-                case HDPCConst::MODE_INIT:
-                case HDPCConst::MODE_DIRECT_DRIVE:
-                case HDPCConst::MODE_INIT_ACKERMANN:
-                case HDPCConst::MODE_INIT_ROTATION:
+                case HDPCModes::MODE_INIT:
+                case HDPCModes::MODE_DIRECT_DRIVE:
+                case HDPCModes::MODE_INIT_ACKERMANN:
+                case HDPCModes::MODE_INIT_ROTATION:
                     ROS_WARN("Ignored drive command in current mode");
                     return;
                     break;
-                case HDPCConst::MODE_ACKERMANN:
+                case HDPCModes::MODE_ACKERMANN:
                     if (fabs(velocity) > 1e-2) {
                         if ((r >= 0) && (r < (geom.rover_width + geom.rover_wheel_width)/2 - 1e-3)) {
                             ROS_DEBUG("Clipped rotation speed in ACKERMANN mode");
@@ -190,7 +191,7 @@ class HDPCDrive {
                         }
                     }
                     break;
-                case HDPCConst::MODE_ROTATION:
+                case HDPCModes::MODE_ROTATION:
                     if (fabs(omega) > 1e-2) {
 
                         if ((r >= 0) && (r > (geom.rover_width - geom.rover_wheel_width)/2 + 1e-3)) {
@@ -251,7 +252,7 @@ class HDPCDrive {
             switch (change_state.response.state) {
                 case SM_INIT:
                 case SM_STOP:
-                    if (req.request_mode == HDPCConst::MODE_STOPPED) {
+                    if (req.request_mode == HDPCModes::MODE_STOPPED) {
                         break;
                     }
                     change_state.request.event = EVENT_START;
@@ -278,37 +279,37 @@ class HDPCDrive {
             res.result = true;
             if (control_mode != req.request_mode) {
                 switch (req.request_mode) {
-                    case HDPCConst::MODE_INIT_ROTATION:
-                    case HDPCConst::MODE_ROTATION:
-                        if ((control_mode != HDPCConst::MODE_STOPPED) 
-                                && (control_mode != HDPCConst::MODE_ROTATION)) {
+                    case HDPCModes::MODE_INIT_ROTATION:
+                    case HDPCModes::MODE_ROTATION:
+                        if ((control_mode != HDPCModes::MODE_STOPPED) 
+                                && (control_mode != HDPCModes::MODE_ROTATION)) {
                             ROS_WARN("Cannot switch to ROTATION from any other mode than STOPPED");
                             res.result = false;
                         } else {
-                            control_mode = HDPCConst::MODE_INIT_ROTATION;
+                            control_mode = HDPCModes::MODE_INIT_ROTATION;
                             desired_elevation = req.desired_elevation;
                             //ROS_INFO("Entering Init Rotation mode");
                         }
                         break;
-                    case HDPCConst::MODE_INIT_ACKERMANN:
-                    case HDPCConst::MODE_ACKERMANN:
-                        if ((control_mode != HDPCConst::MODE_STOPPED) 
-                                && (control_mode != HDPCConst::MODE_ACKERMANN)) {
+                    case HDPCModes::MODE_INIT_ACKERMANN:
+                    case HDPCModes::MODE_ACKERMANN:
+                        if ((control_mode != HDPCModes::MODE_STOPPED) 
+                                && (control_mode != HDPCModes::MODE_ACKERMANN)) {
                             ROS_WARN("Cannot switch to ACKERMANN or ROTATION from any other mode than STOPPED");
                             res.result = false;
                         } else {
-                            control_mode = HDPCConst::MODE_INIT_ACKERMANN;
+                            control_mode = HDPCModes::MODE_INIT_ACKERMANN;
                             desired_elevation = req.desired_elevation;
                             //ROS_INFO("Entering Init Ackermann mode");
                         }
                         break;
-                    case HDPCConst::MODE_DIRECT_DRIVE:
+                    case HDPCModes::MODE_DIRECT_DRIVE:
                         control_mode = req.request_mode;
                         ROS_INFO("Entering Direct Drive mode");
                         break;
-                    case HDPCConst::MODE_INIT:
-                    case HDPCConst::MODE_STOPPED:
-                        control_mode = HDPCConst::MODE_INIT;
+                    case HDPCModes::MODE_INIT:
+                    case HDPCModes::MODE_STOPPED:
+                        control_mode = HDPCModes::MODE_INIT;
                         ROS_INFO("Entering INIT mode");
                         break;
                     default:
@@ -334,7 +335,7 @@ class HDPCDrive {
 
         void directDriveCallback(const DirectDrive::ConstPtr& msg)
         {
-            if (control_mode != HDPCConst::MODE_DIRECT_DRIVE) {
+            if (control_mode != HDPCModes::MODE_DIRECT_DRIVE) {
                 ROS_WARN("Ignored direct drive command while not in DIRECT_DRIVE mode");
                 return;
             }
@@ -361,8 +362,8 @@ class HDPCDrive {
 
         void ackermannCallback(const geometry_msgs::Twist::ConstPtr& msg)
         {
-            if ((control_mode != HDPCConst::MODE_ACKERMANN) && 
-                    (control_mode != HDPCConst::MODE_ROTATION)) {
+            if ((control_mode != HDPCModes::MODE_ACKERMANN) && 
+                    (control_mode != HDPCModes::MODE_ROTATION)) {
                 ROS_WARN("Ignored Ackermann command while not in Ackermann/Rotation mode");
                 return;
             }
@@ -390,7 +391,7 @@ class HDPCDrive {
 
             watchdog = 0;
             desired_elevation = M_PI/2;
-            control_mode = HDPCConst::MODE_INIT;
+            control_mode = HDPCModes::MODE_INIT;
             commands.header.stamp = ros::Time::now();
             for (unsigned int i=0;i<10;i++) {
                 commands.isActive[i] = false;
@@ -421,7 +422,7 @@ class HDPCDrive {
             }
 
             watchdog = 0;
-            control_mode = HDPCConst::MODE_INIT;
+            control_mode = HDPCModes::MODE_INIT;
             commands.header.stamp = ros::Time::now();
             for (unsigned int i=0;i<10;i++) {
                 commands.isActive[i] = false;
@@ -451,8 +452,8 @@ class HDPCDrive {
                 	case SM_DRIVE:
                 		break;
                 	case SM_FAULT:
-                		if (control_mode!=HDPCConst::MODE_STOPPED){
-                			control_mode = HDPCConst::MODE_STOPPED;
+                		if (control_mode!=HDPCModes::MODE_STOPPED){
+                			control_mode = HDPCModes::MODE_STOPPED;
                 			ROS_INFO("HDPC_COM in FAULT state, going to STOPPED MODE");
                 		}
                 		break;
@@ -460,26 +461,26 @@ class HDPCDrive {
 
 
                 switch (control_mode) {
-                    case HDPCConst::MODE_INIT:
+                    case HDPCModes::MODE_INIT:
                         stop_rover();
                         command_pub.publish(commands);
                         break;
-                    case HDPCConst::MODE_INIT_ACKERMANN:
-                    case HDPCConst::MODE_INIT_ROTATION:
+                    case HDPCModes::MODE_INIT_ACKERMANN:
+                    case HDPCModes::MODE_INIT_ROTATION:
                         prepare_steering(desired_elevation);
                         command_pub.publish(commands);
                         break;
-                    case HDPCConst::MODE_ROTATION:
-                    case HDPCConst::MODE_ACKERMANN:
-                    case HDPCConst::MODE_DIRECT_DRIVE:
+                    case HDPCModes::MODE_ROTATION:
+                    case HDPCModes::MODE_ACKERMANN:
+                    case HDPCModes::MODE_DIRECT_DRIVE:
                         if (watchdog == 0) {
-                            control_mode = HDPCConst::MODE_INIT;
+                            control_mode = HDPCModes::MODE_INIT;
                         } else {
                             watchdog -= 1;
                             command_pub.publish(commands);
                         }
                         break;
-                    case HDPCConst::MODE_STOPPED:
+                    case HDPCModes::MODE_STOPPED:
                     default:
                         break;
                 }

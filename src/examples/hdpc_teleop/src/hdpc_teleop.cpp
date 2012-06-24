@@ -13,6 +13,7 @@
 
 #include <hdpc_drive/SetControlMode.h>
 #include <hdpc_drive/Status.h>
+#include <hdpc_drive/HDPCModes.h>
 #include <hdpc_drive/DirectDrive.h>
 #include <hdpc_com/HDPCGeometry.h>
 #include <hdpc_com/HDPCConst.h>
@@ -132,7 +133,7 @@ class HDPCController
                 if (joystate.buttons[5] && joystate.buttons[10] && ((tnow - last_reset_cmd)>5.0)) {
                     ROS_WARN("HDPC Teleop: trigerring reset");
                     send_reset();
-                    set_control_mode(HDPCConst::MODE_INIT);
+                    set_control_mode(HDPCModes::MODE_INIT);
                     prev_control_mode = 1;
                     last_reset_cmd = tnow;
                     ROS_INFO("HDPC Teleop: wait until end of init before continuing");
@@ -141,19 +142,19 @@ class HDPCController
                 }
 
                 switch (state.control_mode) {
-                    case HDPCConst::MODE_STOPPED:
+                    case HDPCModes::MODE_STOPPED:
                         if (prev_control_mode != state.control_mode) {
                             ROS_INFO("Entered in mode STOPPED");
                             prev_control_mode = state.control_mode;
                         }
                         if (joystate.buttons[1]) {
                             rotation_elevation = M_PI/2;
-                            set_control_mode(HDPCConst::MODE_INIT_ACKERMANN, rotation_elevation);
+                            set_control_mode(HDPCModes::MODE_INIT_ACKERMANN, rotation_elevation);
                             ROS_INFO("Entering Ackermann mode.");
                             ROS_INFO("Press 0 to exit. Velocity: Axis 0. Steering: Axis 1");
                         } else if (joystate.buttons[2]) {
                             rotation_elevation = 0.0;
-                            set_control_mode(HDPCConst::MODE_INIT_ROTATION, rotation_elevation);
+                            set_control_mode(HDPCModes::MODE_INIT_ROTATION, rotation_elevation);
                             ROS_INFO("Entering Rotation mode.");
                             ROS_INFO("Press 0 to exit. Rot. Velocity: Axis 1.");
                             ROS_INFO("ICR Positon: [-/0/+] wiht button [3/2/4]");
@@ -161,12 +162,12 @@ class HDPCController
                             ddmsg = hdpc_drive::DirectDrive();
                             last_dd_cmd = -1;
                             current_axle = 0;
-                            set_control_mode(HDPCConst::MODE_DIRECT_DRIVE);
+                            set_control_mode(HDPCModes::MODE_DIRECT_DRIVE);
                             ROS_INFO("Entering Direct Drive mode.");
                             ROS_INFO("Press 0 to exit. Control: Axis 0. Select DoF with [3/4]");
                         }
                         break;
-                    case HDPCConst::MODE_DIRECT_DRIVE:
+                    case HDPCModes::MODE_DIRECT_DRIVE:
                         if (prev_control_mode != state.control_mode) {
                             ROS_INFO("Entered in mode DIRECT DRIVE");
                             prev_control_mode = state.control_mode;
@@ -174,7 +175,7 @@ class HDPCController
                         }
                         if (joystate.buttons[0]) {
                             // Stop
-                            set_control_mode(HDPCConst::MODE_STOPPED);
+                            set_control_mode(HDPCModes::MODE_STOPPED);
                             ROS_INFO("Leaving DirectDrive mode");
                         } else if (joystate.buttons[3] && (tnow - last_dd_cmd > 0.5)) {
                             setdd(ddmsg,current_axle,0.0);
@@ -230,7 +231,7 @@ class HDPCController
 
                         }
                         break;
-                    case HDPCConst::MODE_ACKERMANN:
+                    case HDPCModes::MODE_ACKERMANN:
                         if (prev_control_mode != state.control_mode) {
                             ROS_INFO("Entered in mode ACKERMANN");
                             prev_control_mode = state.control_mode;
@@ -238,7 +239,7 @@ class HDPCController
                         }
                         if (joystate.buttons[0]) {
                             // Stop
-                            set_control_mode(HDPCConst::MODE_STOPPED);
+                            set_control_mode(HDPCModes::MODE_STOPPED);
                             ROS_INFO("Leaving Ackermann mode");
                         } else {
                             geometry_msgs::Twist msg;
@@ -288,18 +289,18 @@ class HDPCController
                             msg.angular.z = msg.linear.x / tan(rotation_elevation);
                             control_pub.publish(msg);
                             if (elevation_change && (fabs(msg.linear.x)<1e-3)) {
-                                set_control_mode(HDPCConst::MODE_INIT_ACKERMANN, rotation_elevation);
+                                set_control_mode(HDPCModes::MODE_INIT_ACKERMANN, rotation_elevation);
                             }
                         }
                         break;
-                    case HDPCConst::MODE_ROTATION:
+                    case HDPCModes::MODE_ROTATION:
                         if (prev_control_mode != state.control_mode) {
                             ROS_INFO("Entered in mode ROTATION");
                             prev_control_mode = state.control_mode;
                         }
                         if (joystate.buttons[0]) {
                             // Stop
-                            set_control_mode(HDPCConst::MODE_STOPPED);
+                            set_control_mode(HDPCModes::MODE_STOPPED);
                             ROS_INFO("Leaving Rotation mode");
                         } else {
                             geometry_msgs::Twist msg;
@@ -324,15 +325,15 @@ class HDPCController
                             msg.linear.x = msg.angular.z * tan(rotation_elevation);
                             control_pub.publish(msg);
                             if (elevation_change && (fabs(msg.angular.z)<1e-3)) {
-                                set_control_mode(HDPCConst::MODE_INIT_ROTATION, rotation_elevation);
+                                set_control_mode(HDPCModes::MODE_INIT_ROTATION, rotation_elevation);
                             }
                         }
                         break;
-                    case HDPCConst::MODE_INIT_ACKERMANN:
-                    case HDPCConst::MODE_INIT_ROTATION:
+                    case HDPCModes::MODE_INIT_ACKERMANN:
+                    case HDPCModes::MODE_INIT_ROTATION:
                         if (joystate.buttons[0]) {
                             // Stop
-                            set_control_mode(HDPCConst::MODE_STOPPED);
+                            set_control_mode(HDPCModes::MODE_STOPPED);
                             ROS_INFO("Leaving Current mode");
                         }
                         break;
