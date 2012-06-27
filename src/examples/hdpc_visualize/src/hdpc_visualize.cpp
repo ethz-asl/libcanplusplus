@@ -23,6 +23,7 @@ class HDPCVisualize {
     protected:
         ros::Subscriber status_sub;
         ros::Publisher marker_pub;
+        ros::Publisher markera_pub;
         tf::TransformBroadcaster br;
        
         void sendtf(double x, double y, double z, double roll, double pitch, double yaw, 
@@ -205,6 +206,7 @@ class HDPCVisualize {
             ma.markers.push_back(mk);
 
             marker_pub.publish(ma);
+            markera_pub.publish(ma);
 
         }
 
@@ -212,6 +214,7 @@ class HDPCVisualize {
 
         HDPCVisualize(ros::NodeHandle & nh) : geom(nh) {
             status_sub = nh.subscribe("/hdpc_drive/status",1,&HDPCVisualize::statusCallback,this);
+            markera_pub = nh.advertise<visualization_msgs::MarkerArray>("markers_array",1);
             marker_pub = nh.advertise<visualization_msgs::MarkerArray>("markers",1);
             nh.param("verbose",verbose,0);
         }

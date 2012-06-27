@@ -132,8 +132,14 @@ sc::result StHoming::react( const EvExecute& )
 			ELMOSteeringProxy* motor =  (ELMOSteeringProxy*) devices->getDevice(iDevice);
 			motor->absCurrentJointPosition_ /= nSamples;
 			//ROS_INFO("Device%d: pos=%lf",iDevice,motor->absCurrentJointPosition_);
-			const double homeOffsetJointPosition_rad = motor->absCurrentJointPosition_ - motor->getPosition();
-			motor->setHomeOffsetJointPosition(homeOffsetJointPosition_rad);
+		    double homeOffsetJointPosition_rad = motor->absCurrentJointPosition_ - motor->getPosition();
+			if (iDevice==6){
+                homeOffsetJointPosition_rad-=0.454;
+            }
+            //if (iDevice==9){
+            //    homeOffsetJointPosition_rad-=0.0;
+            //}
+            motor->setHomeOffsetJointPosition(homeOffsetJointPosition_rad);
 			motor->setPositionLimits(motor->getDeviceParams()->positionLimits);
 		}
 	} else if (waitCount_ > nSamples+10) {

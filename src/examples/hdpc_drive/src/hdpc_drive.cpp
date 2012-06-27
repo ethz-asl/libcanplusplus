@@ -134,7 +134,7 @@ class HDPCDrive {
 
 
         void vel_and_steering(float v_c, float omega_c, unsigned int i_vel, signed int i_steer, float x_w, float y_w) {
-            if ((fabs(omega_c) < 1e-2) && (fabs(v_c) < 1e-2)) {
+            if ((fabs(omega_c) < 1e-3) && (fabs(v_c) < 1e-3)) {
                 commands.velocity[i_vel] = 0.0;
                 commands.isActive[i_vel] = false;
             } else {
@@ -180,7 +180,7 @@ class HDPCDrive {
                     return;
                     break;
                 case HDPCModes::MODE_ACKERMANN:
-                    if (fabs(velocity) > 1e-2) {
+                    if (fabs(velocity) > 1e-3) {
                         if ((r >= 0) && (r < (geom.rover_width + geom.rover_wheel_width)/2 - 1e-3)) {
                             ROS_DEBUG("Clipped rotation speed in ACKERMANN mode");
                             omega = 2*velocity / (geom.rover_width + geom.rover_wheel_width);
@@ -192,7 +192,7 @@ class HDPCDrive {
                     }
                     break;
                 case HDPCModes::MODE_ROTATION:
-                    if (fabs(omega) > 1e-2) {
+                    if (fabs(omega) > 1e-3) {
 
                         if ((r >= 0) && (r > (geom.rover_width - geom.rover_wheel_width)/2 + 1e-3)) {
                             ROS_DEBUG("Clipped velocity speed in ROTATION mode");
