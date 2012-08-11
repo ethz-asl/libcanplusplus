@@ -47,10 +47,14 @@ public:
 	 */
 	SDOMsg* getSDO(unsigned int index);
 
-	/*! Gets the number of PDOs in the list
-	 * @return number of PDOs
+	/*! Gets the number of SDOs in the list
+	 * @return number of SDOs
 	 */
 	int getSize();
+
+	/*! test is we are still waiting to send or receive some SDO
+	 */
+    bool isEmpty();
 
 	/*! Gets the reference to a SDO by index
 	 * @param 	index		index of the SDO in the list

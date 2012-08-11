@@ -124,3 +124,6 @@ SDOMsg* SDOManager::getReceiveSDO()
 	return getFirstSDO();
 }
 
+bool SDOManager::isEmpty() {
+    return getSendSDO() == emptySDO_;
+}
