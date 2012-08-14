@@ -152,12 +152,18 @@ void DeviceEPOS2Motor::setMotorParameters()
 	SDOManager->addSDO(new SDOSetAbortConnectionOptionCode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01));
 }
 
+bool DeviceEPOS2Motor::resetDevice()
+{
+	SDOManager* SDOManager = bus_->getSDOManager();
+
+	SDOManager->addSDO(new SDONMTResetNode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	return true;
+}
 
 bool DeviceEPOS2Motor::initDevice()
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
 
-	SDOManager->addSDO(new SDODisableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDONMTEnterPreOperational(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSetCOBIDSYNC(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x80));
 

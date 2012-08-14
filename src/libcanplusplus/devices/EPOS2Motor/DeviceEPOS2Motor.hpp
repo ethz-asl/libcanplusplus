@@ -41,6 +41,9 @@ public:
 	/* configure at init */
 	virtual void setMotorParameters();
 
+	//! Reset the EPOS
+	virtual bool resetDevice();
+
 	//! Initializes the EPOS
 	virtual bool initDevice();
 
