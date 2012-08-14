@@ -97,6 +97,13 @@ public:
 	 */
 	DeviceEPOS2MotorParameters* getDeviceParams();
 
+    /*! Returns the value of the internal enabled flag
+     * Might not be reflecting the current state of the motor, but does not
+     * cost an SDO. Use getIsMotorDisabled and getIsMotorEnabled to 
+     * retrieve the real state
+     * */
+    bool isEnabled() const {return enabled;}
+
 	/*! Sends a SDO to check if the EPOS is enabled.
 	 * @param flag	true if EPOS is enabled
 	 * @return true if a response is received
@@ -141,6 +148,8 @@ public:
 
 
 protected:
+    bool enabled;
+
 	//! PDO message to measure position and velocity of the motor
 	TxPDOPositionVelocity* txPDOPositionVelocity_;
 

@@ -16,6 +16,7 @@
 DeviceEPOS2Motor::DeviceEPOS2Motor(int nodeId, DeviceEPOS2MotorParameters* deviceParams)
 :Device(nodeId),deviceParams_(deviceParams)
 {
+    enabled = false;
 	sdoStatusWord_ =  SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	sdoStatusWordDisabled_ = SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	sdoAnalogInputOne_ = SDOGetAnalogInputOne::SDOGetAnalogInputOnePtr(new SDOGetAnalogInputOne(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
@@ -156,6 +157,7 @@ bool DeviceEPOS2Motor::initDevice()
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
 
+	SDOManager->addSDO(new SDODisableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDONMTEnterPreOperational(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSetCOBIDSYNC(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x80));
 
@@ -265,7 +267,8 @@ void DeviceEPOS2Motor::initMotor()
 	SDOManager->addSDO(new SDOFaultReset(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOShutdown(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSwitchOn(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
-	SDOManager->addSDO(new SDOEnableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	// SDOManager->addSDO(new SDOEnableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+    enabled = false;
 }
 
 
@@ -276,12 +279,14 @@ void DeviceEPOS2Motor::setEnableMotor()
 	SDOManager->addSDO(new SDOShutdown(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSwitchOn(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOEnableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+    enabled = true;
 }
 
 void DeviceEPOS2Motor::setDisableMotor()
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
 	SDOManager->addSDO(new SDODisableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+    enabled = false;
 }
 
 
@@ -301,6 +306,7 @@ bool DeviceEPOS2Motor::getIsMotorEnabled(bool &flag)
 			sdoStatusWord_->isEnabled(flag);
 			sdoStatusWord_.reset();
 			sdoStatusWord_ =  SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+            enabled = flag;
 			return true;
 		}
 	}
@@ -325,6 +331,7 @@ bool DeviceEPOS2Motor::getIsMotorDisabled(bool &flag)
 			sdoStatusWordDisabled_->isDisabled(flag);
 			sdoStatusWordDisabled_.reset();
 			sdoStatusWordDisabled_ =  SDOReadStatusWord::SDOReadStatusWordPtr(new SDOReadStatusWord(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+            enabled = flag;
 			return true;
 		}
 	}
