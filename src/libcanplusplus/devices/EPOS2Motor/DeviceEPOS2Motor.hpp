@@ -118,6 +118,12 @@ public:
      * */
     signed int getOperationMode() const {return operation_mode_;}
 
+    /*! Returns the value of the internal operation mode 
+     * Might not be reflecting the current state of the motor, but does not
+     * cost an SDO. 
+     * */
+    bool setOperationMode(int op_mode);
+
 	/*! Sends a SDO to check if the EPOS is enabled.
 	 * @param flag	true if EPOS is enabled
 	 * @return true if a response is received

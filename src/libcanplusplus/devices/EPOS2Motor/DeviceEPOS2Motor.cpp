@@ -213,6 +213,14 @@ bool DeviceEPOS2Motor::initDevice(signed int operation_mode)
 
 }
 
+bool DeviceEPOS2Motor::setOperationMode(int op_mode)
+{
+    operation_mode_ = op_mode;
+	SDOManager* SDOManager = bus_->getSDOManager();
+	SDOManager->addSDO(new SDOSetOperationMode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, operation_mode_));
+    return true;
+}
+
 void DeviceEPOS2Motor::configTxPDOs()
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
@@ -237,6 +245,7 @@ void DeviceEPOS2Motor::configRxPDOs()
 	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	SDOManager->addSDO(new SDORxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 
+#if 0
     switch (operation_mode_) {
         case OPERATION_MODE_VELOCITY:
             printf("Device %04X configured in velocity\n",nodeId_);
@@ -252,6 +261,11 @@ void DeviceEPOS2Motor::configRxPDOs()
             // do not configure
             break;
     }
+#else
+    configRxPDOVelocity();
+    configRxPDOProfilePosition();
+    //configRxPDOPositionLimits();
+#endif
 }
 
 void DeviceEPOS2Motor::configTxPDOPositionVelocity()
