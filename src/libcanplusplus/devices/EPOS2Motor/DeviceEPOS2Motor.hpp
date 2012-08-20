@@ -60,7 +60,7 @@ public:
 	/*! Configures all RxPDOs on the EPOS
 	 * Is invoked by initDevice()
 	 */
-	virtual void configRxPDOs(signed int operation_mode = OPERATION_MODE_VELOCITY);
+	virtual void configRxPDOs();
 
 	/*! Configures the PDO to measure the position and velocity
 	 * Is invoked by configTxPDOs()

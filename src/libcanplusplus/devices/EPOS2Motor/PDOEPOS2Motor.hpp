@@ -59,7 +59,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOPosition: public CANOpenMsg {
 public:
-	RxPDOPosition(int nodeId, int SMId):CANOpenMsg(0x400+nodeId, SMId),isOn_(true),isEnabled_(false)
+	RxPDOPosition(int nodeId, int SMId):CANOpenMsg(0x300+nodeId, SMId),isOn_(true),isEnabled_(false)
 	{
 		value_[2] = 0x003F;		///< Controlword 0x003F
 		value_[0] = 0x01;		///< Profile Position Mode

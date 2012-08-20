@@ -44,7 +44,7 @@ void DeviceEPOS2Motor::addRxPDOs()
     bus_->getRxPDOManager()->addPDO(rxPDOVelocity_);
 
     /* add Position RxPDO, not sure if it can share the same SMId */
-    rxPDOPosition_ = new RxPDOPosition(nodeId_, deviceParams_->rxPDO1SMId_);
+    rxPDOPosition_ = new RxPDOPosition(nodeId_, deviceParams_->rxPDO2SMId_);
     bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
 
     /* add Position Limit RxPDO */
@@ -70,6 +70,7 @@ void DeviceEPOS2Motor::setVelocity(double jointVelocity_rad_s)
             } 
             break;
         default:
+            printf("Ignoring non velocity command for device %04x\n",nodeId_);
             // ignore
             break;
     }
@@ -81,10 +82,12 @@ void DeviceEPOS2Motor::setPosition(double jointPosition_rad)
         case OPERATION_MODE_POSITION:
             {
                 int jointPosition_ticks = jointPosition_rad * deviceParams_->gearratio_motor * deviceParams_->RAD_TO_TICKS;
+                // printf("Device %04x moving to %d\n",nodeId_,jointPosition_ticks);
                 rxPDOPosition_->setPosition(jointPosition_ticks);
             } 
             break;
         default:
+            printf("Ignoring non position command for device %04x\n",nodeId_);
             // ignore
             break;
     }
@@ -175,7 +178,8 @@ void DeviceEPOS2Motor::setMotorParameters()
 	setPositionLimits(deviceParams_->positionLimits);
 
 
-	SDOManager->addSDO(new SDOSetOperationMode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, deviceParams_->operationMode));
+	// SDOManager->addSDO(new SDOSetOperationMode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, deviceParams_->operationMode));
+	SDOManager->addSDO(new SDOSetOperationMode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, operation_mode_));
 
 	// 1=Fault signal only instead of Quickstop
 	SDOManager->addSDO(new SDOSetAbortConnectionOptionCode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01));
@@ -196,8 +200,9 @@ bool DeviceEPOS2Motor::initDevice(signed int operation_mode)
 	SDOManager->addSDO(new SDONMTEnterPreOperational(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSetCOBIDSYNC(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x80));
 
+    operation_mode_ = operation_mode;
 	configTxPDOs();
-	configRxPDOs(operation_mode);
+	configRxPDOs();
 
 	setMotorParameters();
 	initMotor();
@@ -221,7 +226,7 @@ void DeviceEPOS2Motor::configTxPDOs()
 	configTxPDOPositionVelocity();
 }
 
-void DeviceEPOS2Motor::configRxPDOs(signed int operation_mode)
+void DeviceEPOS2Motor::configRxPDOs()
 {
 
 	SDOManager* SDOManager = bus_->getSDOManager();
@@ -232,13 +237,14 @@ void DeviceEPOS2Motor::configRxPDOs(signed int operation_mode)
 	SDOManager->addSDO(new SDORxPDO3SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	SDOManager->addSDO(new SDORxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 
-    operation_mode_ = operation_mode;
-    switch (operation_mode) {
+    switch (operation_mode_) {
         case OPERATION_MODE_VELOCITY:
+            printf("Device %04X configured in velocity\n",nodeId_);
             configRxPDOVelocity();
             //configRxPDOPositionLimits();
             break;
         case OPERATION_MODE_POSITION:
+            printf("Device %04X configured in position\n",nodeId_);
             configRxPDOProfilePosition();
             //configRxPDOPositionLimits();
             break;
@@ -293,25 +299,25 @@ void DeviceEPOS2Motor::configRxPDOProfilePosition()
 	SDOManager* SDOManager = bus_->getSDOManager();
 
 	/* Receive PDO 3 Parameter */
-	///< Step 1: Configure COB-ID of the RxPDO 1
-	SDOManager->addSDO(new SDORxPDO1ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	///< Step 1: Configure COB-ID of the RxPDO 2
+	SDOManager->addSDO(new SDORxPDO2ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	///< Step 2: Set Transmission Type: SYNC 0x01
-	SDOManager->addSDO(new SDORxPDO1SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00)); // SYNC
+	SDOManager->addSDO(new SDORxPDO2SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
 	///< Step 3: Number of Mapped Application Objects
-	SDOManager->addSDO(new SDORxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+	SDOManager->addSDO(new SDORxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 	///< Step 4: Mapping Objects
 
 	///< Mapping "Operation Mode"
-	SDOManager->addSDO(new SDORxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60600008));
+	SDOManager->addSDO(new SDORxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60600008));
 
 	///< Mapping "Target position"
-	SDOManager->addSDO(new SDORxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x607A0020));
+	SDOManager->addSDO(new SDORxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x607A0020));
 	///< Mapping "Controlword"
-	SDOManager->addSDO(new SDORxPDO1SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x60400010));
+	SDOManager->addSDO(new SDORxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x60400010));
 
 
 	///< Step 5: Number of Mapped Application Objects
-	SDOManager->addSDO(new SDORxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
+	SDOManager->addSDO(new SDORxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
 }
 
 
@@ -353,6 +359,17 @@ void DeviceEPOS2Motor::setEnableMotor()
 	SDOManager->addSDO(new SDOShutdown(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOSwitchOn(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
 	SDOManager->addSDO(new SDOEnableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+
+    switch (operation_mode_) {
+        case OPERATION_MODE_VELOCITY:
+            break;
+        case OPERATION_MODE_POSITION:
+            rxPDOPosition_->enable();
+            break;
+        default:
+            // do not configure
+            break;
+    }
     enabled_ = true;
 }
 
@@ -360,6 +377,16 @@ void DeviceEPOS2Motor::setDisableMotor()
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
 	SDOManager->addSDO(new SDODisableOperation(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+    switch (operation_mode_) {
+        case OPERATION_MODE_VELOCITY:
+            break;
+        case OPERATION_MODE_POSITION:
+            rxPDOPosition_->disable();
+            break;
+        default:
+            // do not configure
+            break;
+    }
     enabled_ = false;
 }
 
