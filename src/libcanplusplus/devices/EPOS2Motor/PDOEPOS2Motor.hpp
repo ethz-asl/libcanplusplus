@@ -56,6 +56,57 @@ public:
 	};
 };
 
+//////////////////////////////////////////////////////////////////////////////
+class RxPDOPosition: public CANOpenMsg {
+public:
+	RxPDOPosition(int nodeId, int SMId):CANOpenMsg(0x400+nodeId, SMId),isOn_(true),isEnabled_(false)
+	{
+		value_[2] = 0x003F;		///< Controlword 0x003F
+		value_[0] = 0x01;		///< Profile Position Mode
+		//value_[3] = 60000;
+		length_[0] = 1;			///< Profile Position Mode
+		length_[1] = 4;			///< Target Position
+		length_[2] = 2;			///< Controlword
+		//length_[3] = 4;
+	};
+
+	virtual ~RxPDOPosition() {};
+
+	void setPosition(int position)
+	{
+		if (isEnabled_) {
+			value_[1] = position;
+			//value_[1] = 0x003F;		///< Controlword 0x003F
+			flag_ = 1;
+			if (isOn_) {
+				value_[2] = 0x003F;
+				isOn_ = false;
+			} else {
+				value_[2] = 0x002F;
+				isOn_ = true;
+			}
+		}
+	};
+
+	void disable()
+	{
+		value_[2] = 0x0007;		///< Controlword (disable)
+		isEnabled_ = false;
+		flag_ = 1;
+	};
+
+	void enable()
+	{
+		value_[2] = 0x000F;		///< Controlword (enable)
+		isEnabled_ = true;
+		flag_ = 1;
+	};
+
+private:
+	bool isOn_;
+	bool isEnabled_;
+};
+
 
 //////////////////////////////////////////////////////////////////////////////
 class TxPDOPositionVelocity: public CANOpenMsg {

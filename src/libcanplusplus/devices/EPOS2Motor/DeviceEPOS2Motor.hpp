@@ -45,7 +45,7 @@ public:
 	virtual bool resetDevice();
 
 	//! Initializes the EPOS
-	virtual bool initDevice();
+	virtual bool initDevice(signed int operation_mode = OPERATION_MODE_VELOCITY);
 
 	/*! Enables the EPOS
 	 * Is invoked by initDevice();
@@ -60,7 +60,7 @@ public:
 	/*! Configures all RxPDOs on the EPOS
 	 * Is invoked by initDevice()
 	 */
-	virtual void configRxPDOs();
+	virtual void configRxPDOs(signed int operation_mode = OPERATION_MODE_VELOCITY);
 
 	/*! Configures the PDO to measure the position and velocity
 	 * Is invoked by configTxPDOs()
@@ -71,6 +71,11 @@ public:
 	 * Is invoked by configRxPDOs()
 	 */
 	virtual void configRxPDOVelocity();
+
+	/*! Configures the PDO to send the command position
+	 * Is invoked by configRxPDOs()
+	 */
+	virtual void configRxPDOProfilePosition();
 
 	/*! Configures the PDO to send the position limits
 	 * Is invoked by configRxPDOs()
@@ -105,7 +110,13 @@ public:
      * cost an SDO. Use getIsMotorDisabled and getIsMotorEnabled to 
      * retrieve the real state
      * */
-    bool isEnabled() const {return enabled;}
+    bool isEnabled() const {return enabled_;}
+
+    /*! Returns the value of the internal operation mode 
+     * Might not be reflecting the current state of the motor, but does not
+     * cost an SDO. 
+     * */
+    signed int getOperationMode() const {return operation_mode_;}
 
 	/*! Sends a SDO to check if the EPOS is enabled.
 	 * @param flag	true if EPOS is enabled
@@ -126,6 +137,12 @@ public:
 	 * @param velocity 		motor velocity [rad/s]
 	 */
 	void setVelocity(double velocity);
+
+	/*! Sets the desired joint position [rad]
+	 * Converts the position to the desired motor position [ticks]
+	 * @param jointPosition_rad 	motor position [rad]
+	 */
+    void setPosition(double jointPosition_rad);
 
 	/*! Sets the position limits of the joint per PDO
 	 * Converts the limits to motor position limits
@@ -151,13 +168,22 @@ public:
 
 
 protected:
-    bool enabled;
+    //! Internal record of the motor state. Valid only until some external
+    //factor brings the motor to a fault state
+    bool enabled_;
+    
+    //! Internal record of the EPOS operation mode. Should be one of the
+    //OPERATION_MODE_... constants. Only once can be active at a given time.
+    signed int operation_mode_;
 
 	//! PDO message to measure position and velocity of the motor
 	TxPDOPositionVelocity* txPDOPositionVelocity_;
 
 	//! PDO message to send motor velocity command
 	RxPDOVelocity* rxPDOVelocity_;
+
+	//! PDO message to send motor position command
+	RxPDOPosition* rxPDOPosition_;
 
 	//! PDO message to send motor position limits command
 	//RxPDOPositionLimit* rxPDOPositionLimit_;
