@@ -217,6 +217,9 @@ bool DeviceEPOS2Motor::setOperationMode(int op_mode)
 {
     operation_mode_ = op_mode;
 	SDOManager* SDOManager = bus_->getSDOManager();
+    // reset message flags
+    rxPDOVelocity_->setFlag(0);
+    rxPDOPosition_->setFlag(0);
 	SDOManager->addSDO(new SDOSetOperationMode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, operation_mode_));
     return true;
 }
