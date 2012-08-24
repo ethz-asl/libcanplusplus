@@ -165,13 +165,14 @@ public:
 	{
 
 		short val;
-		val = (value_[0] + (value_[1]<<8));
-		analog_ = int(val);
 
-		val = (value_[2] + (value_[3]<<8));
+		val = (value_[0] + (value_[1]<<8));
 		current_ = int(val);
 
-		statusword_ = (int)((unsigned short)(value_[4] + (value_[5]<<8)));
+		statusword_ = (int)((unsigned short)(value_[2] + (value_[3]<<8)));
+        
+		val = (value_[4] + (value_[5]<<8));
+		analog_ = int(val);
 	};
 
 	int getAnalog()

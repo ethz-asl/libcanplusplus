@@ -132,7 +132,7 @@ public:
      * retrieve the real state
      * */
     bool isEnabled() {
-#if 0
+#if 1
         return enabled_;
 #else
         // Using PDO

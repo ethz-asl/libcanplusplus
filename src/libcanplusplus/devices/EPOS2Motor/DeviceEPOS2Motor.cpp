@@ -29,10 +29,11 @@ DeviceEPOS2Motor::~DeviceEPOS2Motor()
 	if (deviceParams_ != NULL){
 		delete deviceParams_;
 	}
-    delete rxPDOVelocity_;
-    delete rxPDOPosition_;
-    delete txPDOPositionVelocity_;
-    delete txPDOAnalogCurrent_;
+    // No need to delete, the bus manager will take care of that
+    // delete rxPDOVelocity_;
+    // delete rxPDOPosition_;
+    // delete txPDOPositionVelocity_;
+    // delete txPDOAnalogCurrent_;
 }
 
 
@@ -136,7 +137,7 @@ double DeviceEPOS2Motor::getAnalog()
 
 double DeviceEPOS2Motor::getCurrent()
 {
-    return txPDOAnalogCurrent_->getAnalog();
+    return txPDOAnalogCurrent_->getCurrent();
 }
 
 unsigned int DeviceEPOS2Motor::getStatusWord() 
@@ -325,16 +326,17 @@ void DeviceEPOS2Motor::configTxPDOAnalogCurrent()
 	SDOManager->addSDO(new SDOTxPDO2SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
 	///< Number of Mapped Application Objects
 	SDOManager->addSDO(new SDOTxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+	///< Mapping "actual current value - works!"
+	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x60780010));
+
+	///< Mapping "status word"
+	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60410010));
+
 	///< Mapping "Analog value"
-	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x22050110));
+	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x207C0110));
 	///< Mapping "Digital value"
 	/*	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x22000020));*/
 
-	///< Mapping "actual current value - works!"
-	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60780010));
-
-	///< Mapping "status word"
-	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x60410010));
 
 	///< Number of Mapped Application Objects
 	SDOManager->addSDO(new SDOTxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
