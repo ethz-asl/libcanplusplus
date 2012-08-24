@@ -11,6 +11,8 @@
 #ifndef SDOEPOS2MOTOR_HPP_
 #define SDOEPOS2MOTOR_HPP_
 
+#include <stdlib.h>
+#include <stdio.h>
 #include "SDOWriteMsg.hpp"
 #include "SDOReadMsg.hpp"
 #include "SDOEPOS2Motor.hpp"

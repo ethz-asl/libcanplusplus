@@ -22,12 +22,13 @@
 
 
 #include "CANOpenMsg.hpp"
+#include "SDOEPOS2Motor.hpp"
 #include <stdio.h>
 
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOSync: public CANOpenMsg {
 public:
-	RxPDOSync(int SMId):CANOpenMsg(0x80, SMId) {
+	RxPDOSync(unsigned int SMId):CANOpenMsg(0x80, SMId) {
 		flag_ = 1;
 	};
 	virtual ~RxPDOSync() {};
@@ -36,7 +37,9 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOVelocity: public CANOpenMsg {
 public:
-	RxPDOVelocity(int nodeId, int SMId):CANOpenMsg(0x200+nodeId, SMId)
+	RxPDOVelocity(unsigned int pdoId, 
+            unsigned int nodeId, unsigned int SMId):
+        CANOpenMsg(0x100+pdoId*0x100+nodeId, SMId)
 	{
 		value_[1] = 0xFE;		///< Velocity Mode = -2
 
@@ -59,7 +62,9 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOPosition: public CANOpenMsg {
 public:
-	RxPDOPosition(int nodeId, int SMId):CANOpenMsg(0x300+nodeId, SMId),isOn_(true),isEnabled_(false)
+	RxPDOPosition(unsigned int pdoId, 
+            unsigned int nodeId, unsigned int SMId):
+        CANOpenMsg(0x100+pdoId*0x100+nodeId, SMId),isOn_(true),isEnabled_(false)
 	{
 		value_[2] = 0x003F;		///< Controlword 0x003F
 		value_[0] = 0x01;		///< Profile Position Mode
@@ -111,7 +116,8 @@ private:
 //////////////////////////////////////////////////////////////////////////////
 class TxPDOPositionVelocity: public CANOpenMsg {
 public:
-	TxPDOPositionVelocity(int nodeId, int SMId):CANOpenMsg(0x180+nodeId, SMId)
+	TxPDOPositionVelocity(unsigned int pdoId, 
+            unsigned int nodeId, unsigned int SMId):CANOpenMsg(0x080+pdoId*0x100+nodeId, SMId)
 	{
 
 	};
@@ -143,4 +149,88 @@ private:
 	int velocity_;
 
 };
+
+//////////////////////////////////////////////////////////////////////////////
+class TxPDOAnalogCurrent: public CANOpenMsg {
+public:
+	TxPDOAnalogCurrent(unsigned int pdoId, 
+            unsigned int nodeId, unsigned int SMId):CANOpenMsg(0x080+pdoId*0x100+nodeId, SMId)
+	{
+
+	};
+
+	virtual ~TxPDOAnalogCurrent() {};
+
+	virtual void processMsg()
+	{
+
+		short val;
+		val = (value_[0] + (value_[1]<<8));
+		analog_ = int(val);
+
+		val = (value_[2] + (value_[3]<<8));
+		current_ = int(val);
+
+		statusword_ = (int)((unsigned short)(value_[4] + (value_[5]<<8)));
+	};
+
+	int getAnalog()
+	{
+		return analog_;
+	};
+
+	int getCurrent()
+	{
+		return current_;
+	};
+
+	int getStatusWord()
+	{
+		return statusword_;
+	};
+
+	bool isEnabled()
+	{
+		return (statusword_ & (1<<STATUSWORD_OPERATION_ENABLE_BIT));
+	};
+
+	bool isDisabled()
+	{
+		return !(statusword_ & (1<<STATUSWORD_OPERATION_ENABLE_BIT));
+	};
+
+	bool isSwitchedOn()
+	{
+		return (statusword_ & (1<<STATUSWORD_SWITCHED_ON_BIT));
+	};
+
+	bool isSwitchedOff()
+	{
+		return (statusword_ & (1<<STATUSWORD_SWITCH_ON_DISABLE_BIT));
+	};
+
+	bool isVoltageEnabled()
+	{
+		return (statusword_ & (1<<STATUSWORD_VOLTAGE_ENABLE_BIT));
+	};
+
+	bool isFault()
+	{
+		return (statusword_ & (1<<STATUSWORD_FAULT_BIT));
+	};
+
+	bool isInternalLimitActive()
+	{
+		return (statusword_ & (1<<STATUSWORD_INTERNAL_LIMIT_ACTIVE_BIT));
+	}
+
+
+
+private:
+	int analog_;
+	int current_;
+	int statusword_;
+
+};
+
 #endif /* CANPDOS_HPP_ */

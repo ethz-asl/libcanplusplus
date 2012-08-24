@@ -29,6 +29,10 @@ DeviceEPOS2Motor::~DeviceEPOS2Motor()
 	if (deviceParams_ != NULL){
 		delete deviceParams_;
 	}
+    delete rxPDOVelocity_;
+    delete rxPDOPosition_;
+    delete txPDOPositionVelocity_;
+    delete txPDOAnalogCurrent_;
 }
 
 
@@ -40,11 +44,11 @@ DeviceEPOS2MotorParameters* DeviceEPOS2Motor::getDeviceParams()
 void DeviceEPOS2Motor::addRxPDOs()
 {
     /* add Velocity RxPDO */
-    rxPDOVelocity_ = new RxPDOVelocity(nodeId_, deviceParams_->rxPDO1SMId_);
+    rxPDOVelocity_ = new RxPDOVelocity(1,nodeId_, deviceParams_->rxPDO1SMId_);
     bus_->getRxPDOManager()->addPDO(rxPDOVelocity_);
 
     /* add Position RxPDO, not sure if it can share the same SMId */
-    rxPDOPosition_ = new RxPDOPosition(nodeId_, deviceParams_->rxPDO2SMId_);
+    rxPDOPosition_ = new RxPDOPosition(2,nodeId_, deviceParams_->rxPDO2SMId_);
     bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
 
     /* add Position Limit RxPDO */
@@ -55,8 +59,11 @@ void DeviceEPOS2Motor::addRxPDOs()
 void DeviceEPOS2Motor::addTxPDOs()
 {
 	/* add PositionVelocity TxPDO */
-	txPDOPositionVelocity_ = new TxPDOPositionVelocity(nodeId_, deviceParams_->txPDO1SMId_);
+	txPDOPositionVelocity_ = new TxPDOPositionVelocity(1,nodeId_, deviceParams_->txPDO1SMId_);
 	bus_->getTxPDOManager()->addPDO(txPDOPositionVelocity_);
+
+	txPDOAnalogCurrent_ = new TxPDOAnalogCurrent(2,nodeId_, deviceParams_->txPDO2SMId_);
+	bus_->getTxPDOManager()->addPDO(txPDOAnalogCurrent_);
 }
 
 
@@ -120,6 +127,21 @@ double DeviceEPOS2Motor::getPosition()
 double DeviceEPOS2Motor::getVelocity()
 {
 	return ((double)txPDOPositionVelocity_->getVelocity()) / ( deviceParams_->rad_s_Gear_to_rpm_Motor);
+}
+
+double DeviceEPOS2Motor::getAnalog()
+{
+    return txPDOAnalogCurrent_->getAnalog();
+}
+
+double DeviceEPOS2Motor::getCurrent()
+{
+    return txPDOAnalogCurrent_->getAnalog();
+}
+
+unsigned int DeviceEPOS2Motor::getStatusWord() 
+{
+    return txPDOAnalogCurrent_->getStatusWord();
 }
 
 
@@ -235,6 +257,7 @@ void DeviceEPOS2Motor::configTxPDOs()
 	SDOManager->addSDO(new SDOTxPDO4SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
 
 	configTxPDOPositionVelocity();
+	configTxPDOAnalogCurrent();
 }
 
 void DeviceEPOS2Motor::configRxPDOs()
@@ -290,6 +313,34 @@ void DeviceEPOS2Motor::configTxPDOPositionVelocity()
 	///< Number of Mapped Application Objects
 	SDOManager->addSDO(new SDOTxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
 }
+
+void DeviceEPOS2Motor::configTxPDOAnalogCurrent()
+{
+	SDOManager* SDOManager = bus_->getSDOManager();
+
+	// Transmit PDO 2 Parameter
+	///< configure COB-ID Transmit PDO 2
+	SDOManager->addSDO(new SDOTxPDO2ConfigureCOBID(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_));
+	///< Set Transmission Type: SYNC 0x01
+	SDOManager->addSDO(new SDOTxPDO2SetTransmissionType(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01)); // SYNC
+	///< Number of Mapped Application Objects
+	SDOManager->addSDO(new SDOTxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x00));
+	///< Mapping "Analog value"
+	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x01, 0x22050110));
+	///< Mapping "Digital value"
+	/*	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x22000020));*/
+
+	///< Mapping "actual current value - works!"
+	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02, 0x60780010));
+
+	///< Mapping "status word"
+	SDOManager->addSDO(new SDOTxPDO2SetMapping(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03, 0x60410010));
+
+	///< Number of Mapped Application Objects
+	SDOManager->addSDO(new SDOTxPDO2SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x03));
+
+}
+
 
 void DeviceEPOS2Motor::configRxPDOVelocity()
 {
@@ -410,6 +461,7 @@ void DeviceEPOS2Motor::setDisableMotor()
 
 bool DeviceEPOS2Motor::getIsMotorEnabled(bool &flag)
 {
+#if 0
 	SDOManager* SDOManager = bus_->getSDOManager();
 
 
@@ -430,11 +482,16 @@ bool DeviceEPOS2Motor::getIsMotorEnabled(bool &flag)
 	}
 
 	return false;
+#else
+    enabled_ = txPDOAnalogCurrent_->isEnabled();
+    return true;
+#endif
 
 }
 
 bool DeviceEPOS2Motor::getIsMotorDisabled(bool &flag)
 {
+#if 0
 	SDOManager* SDOManager = bus_->getSDOManager();
 
 
@@ -455,6 +512,10 @@ bool DeviceEPOS2Motor::getIsMotorDisabled(bool &flag)
 	}
 
 	return false;
+#else
+    enabled_ = txPDOAnalogCurrent_->isDisabled();
+    return true;
+#endif
 }
 
 bool DeviceEPOS2Motor::getAnalogInputOne(double& value)
@@ -505,3 +566,44 @@ bool DeviceEPOS2Motor::getAnalogInputTwo(double& value)
 
 	return false;
 }
+
+const TxPDOAnalogCurrent* DeviceEPOS2Motor::getStatus() const
+{
+	return txPDOAnalogCurrent_;
+}
+
+std::string DeviceEPOS2Motor::getStatusString() const
+{
+	unsigned int statusword = txPDOAnalogCurrent_->getStatusWord();
+    std::string out = "[ ";
+
+
+	if(statusword & (1<<STATUSWORD_OPERATION_ENABLE_BIT))
+		out += "Enabled ";
+
+	if(!(statusword & (1<<STATUSWORD_OPERATION_ENABLE_BIT)))
+		out += "Disabled";
+
+	if(statusword & (1<<STATUSWORD_SWITCHED_ON_BIT))
+		out += "Switched on";
+
+	if(statusword & (1<<STATUSWORD_VOLTAGE_ENABLE_BIT))
+		out += "Voltage enabled";
+
+	if(statusword & (1<<STATUSWORD_FAULT_BIT))
+		out += "Fault";
+
+	if(statusword & (1<<STATUSWORD_INTERNAL_LIMIT_ACTIVE_BIT))
+		out += "Internal limit active";
+
+	if(statusword & (1<<STATUSWORD_SWITCH_ON_DISABLE_BIT))
+		out += "Switch on disable";
+
+	if(statusword & (1<<STATUSWORD_QUICK_STOP_BIT))
+		out += "Quick stop";
+
+
+	return out + "]";
+
+}
+

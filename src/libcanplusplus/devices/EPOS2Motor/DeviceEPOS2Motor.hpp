@@ -67,6 +67,11 @@ public:
 	 */
 	virtual void configTxPDOPositionVelocity();
 
+	/*! Configures the PDO to measure the analog currents and status word
+	 * Is invoked by configTxPDOs()
+	 */
+	virtual void configTxPDOAnalogCurrent();
+
 	/*! Configures the PDO to send the command velocity
 	 * Is invoked by configRxPDOs()
 	 */
@@ -100,6 +105,22 @@ public:
 	 */
 	double getVelocity();
 
+	/*! Gets the current
+	 * @return current [mA]
+	 */
+	double getCurrent();
+
+	/*! Gets the analog signal
+	 * @return
+	 */
+	double getAnalog();
+
+    /*! Gets the status word
+     * Returns a bit mask that can be interpreted using the constant
+     * STATUSWORD_* (defined int SDOEPOS2Motor.hpp)
+     * */
+    unsigned int getStatusWord();
+
 	/*! Gets the reference to the device parameters
 	 * @return reference to the device parameters
 	 */
@@ -110,7 +131,25 @@ public:
      * cost an SDO. Use getIsMotorDisabled and getIsMotorEnabled to 
      * retrieve the real state
      * */
-    bool isEnabled() const {return enabled_;}
+    bool isEnabled() {
+#if 0
+        return enabled_;
+#else
+        // Using PDO
+        bool res = false;
+        if (getIsMotorEnabled(res)) {
+            return res;
+        }
+        return false;
+#endif
+    }
+    /*! Retrieve the pointer to the PDO from which the status word can be
+     * extracted */
+    const TxPDOAnalogCurrent* getStatus() const;
+
+    /*! Build a string representation of the status word
+     * */
+    std::string getStatusString() const;
 
     /*! Returns the value of the internal operation mode 
      * Might not be reflecting the current state of the motor, but does not
@@ -184,6 +223,9 @@ protected:
 
 	//! PDO message to measure position and velocity of the motor
 	TxPDOPositionVelocity* txPDOPositionVelocity_;
+
+	//! PDO message to measure analog value, current and retrieve the status word
+	TxPDOAnalogCurrent* txPDOAnalogCurrent_;
 
 	//! PDO message to send motor velocity command
 	RxPDOVelocity* rxPDOVelocity_;
