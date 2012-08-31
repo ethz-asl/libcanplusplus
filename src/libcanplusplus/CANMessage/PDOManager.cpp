@@ -33,6 +33,15 @@ int PDOManager::getSize()
 	return pdos_.size();
 }
 
+CANOpenMsg* PDOManager::getPDOWithCOBId(unsigned int id) {
+    for (unsigned int i=0;i<pdos_.size();i++) {
+        if (pdos_[i].getCOBId() == (signed)id) {
+            return &(pdos_[i]);
+        }
+    }
+    return NULL;
+}
+
 CANOpenMsg* PDOManager::getPDO(unsigned int index)
 {
 	try {

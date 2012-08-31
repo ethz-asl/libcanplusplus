@@ -28,10 +28,24 @@
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOSync: public CANOpenMsg {
 public:
-	RxPDOSync(unsigned int SMId):CANOpenMsg(0x80, SMId) {
+	RxPDOSync(unsigned int smid):CANOpenMsg(0x80, smid) {
 		flag_ = 1;
 	};
 	virtual ~RxPDOSync() {};
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class RxPDORTR: public CANOpenMsg {
+public:
+	RxPDORTR(unsigned int nodeId, unsigned int smid):
+        CANOpenMsg(0x700+nodeId, smid)
+	{
+        setRTR(1);
+        setFlag(1);
+	};
+
+	virtual ~RxPDORTR() {};
+
 };
 
 //////////////////////////////////////////////////////////////////////////////

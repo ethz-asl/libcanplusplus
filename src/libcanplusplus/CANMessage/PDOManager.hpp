@@ -39,6 +39,13 @@ public:
 	 */
 	CANOpenMsg*  getPDO(unsigned int index);
 
+	/*! Gets the first PDO with a given COBId
+	 *
+	 * @param id	desired COBId
+	 * @return reference to PDO, NULL if not found
+	 */
+    CANOpenMsg* getPDOWithCOBId(unsigned int id);
+
 	/*! Short version of getPDO
 	 *
 	 * @param index index of the PDO in the list

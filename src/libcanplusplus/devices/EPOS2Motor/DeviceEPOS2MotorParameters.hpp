@@ -115,6 +115,9 @@ public:
 	//! operation (control) mode (velocity, position, current, etc. Use defines above)
 	int operationMode;
 
+	//! identifier of shared memory of the Sync PDO
+	int rxSYNCSMId_;
+
 	//! identifier of shared memory of the first RxPDO
 	int rxPDO1SMId_;
 
@@ -145,6 +148,12 @@ public:
 	//! identifier of shared memory of sent SDO
 	int outSDOSMId_;
 
+	//! identifier of shared memory of received NMT
+	int inNMTSMId_;
+
+	//! identifier of shared memory of sent NMT
+	int outNMTSMId_;
+
 	/*! Motor parameters for EPOS2
 	 *
 	 * @param rxPDOSMId		identifier of shared memory of RxPDO
@@ -152,26 +161,32 @@ public:
 	 * @param inSDOSMId		identifier of shared memory of received SDO
 	 * @param outSDOSMId	identifier of shared memory of sent SDO
 	 */
-	DeviceEPOS2MotorParameters(int rxPDO1SMId,
-			  	  	  	  	   int rxPDO2SMId,
-			  	  	  	  	   int rxPDO3SMId,
-			  	  	  	  	   int rxPDO4SMId,
-							   int txPDO1SMId,
-							   int txPDO2SMId,
-							   int txPDO3SMId,
-							   int txPDO4SMId,
-							   int inSDOSMId,
-							   int outSDOSMId)
-	:rxPDO1SMId_(rxPDO1SMId),
-	 rxPDO2SMId_(rxPDO2SMId),
-	 rxPDO3SMId_(rxPDO3SMId),
-	 rxPDO4SMId_(rxPDO4SMId),
-	 txPDO1SMId_(txPDO1SMId),
-	 txPDO2SMId_(txPDO2SMId),
-	 txPDO3SMId_(txPDO3SMId),
-	 txPDO4SMId_(txPDO4SMId),
-	 inSDOSMId_(inSDOSMId),
-	 outSDOSMId_(outSDOSMId)
+	DeviceEPOS2MotorParameters(unsigned int rxSYNCSMId,
+            unsigned int rxPDO1SMId,
+            unsigned int rxPDO2SMId,
+            unsigned int rxPDO3SMId,
+            unsigned int rxPDO4SMId,
+            unsigned int txPDO1SMId,
+            unsigned int txPDO2SMId,
+            unsigned int txPDO3SMId,
+            unsigned int txPDO4SMId,
+            unsigned int inSDOSMId,
+            unsigned int outSDOSMId,
+            unsigned int inNMTSMId,
+            unsigned int outNMTSMId) :
+        rxSYNCSMId_(rxSYNCSMId),
+        rxPDO1SMId_(rxPDO1SMId),
+        rxPDO2SMId_(rxPDO2SMId),
+        rxPDO3SMId_(rxPDO3SMId),
+        rxPDO4SMId_(rxPDO4SMId),
+        txPDO1SMId_(txPDO1SMId),
+        txPDO2SMId_(txPDO2SMId),
+        txPDO3SMId_(txPDO3SMId),
+        txPDO4SMId_(txPDO4SMId),
+        inSDOSMId_(inSDOSMId),
+        outSDOSMId_(outSDOSMId),
+        inNMTSMId_(inNMTSMId),
+        outNMTSMId_(outNMTSMId)
 	{
 
 	}

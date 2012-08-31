@@ -44,6 +44,11 @@ DeviceEPOS2MotorParameters* DeviceEPOS2Motor::getDeviceParams()
 
 void DeviceEPOS2Motor::addRxPDOs()
 {
+    CANOpenMsg* sync = bus_->getRxPDOManager()->getPDOWithCOBId(0x080);
+    if (!sync) {
+        bus_->getRxPDOManager()->addPDO(new RxPDOSync(deviceParams_->rxSYNCSMId_));
+    }
+
     /* add Velocity RxPDO */
     rxPDOVelocity_ = new RxPDOVelocity(1,nodeId_, deviceParams_->rxPDO1SMId_);
     bus_->getRxPDOManager()->addPDO(rxPDOVelocity_);
@@ -51,6 +56,10 @@ void DeviceEPOS2Motor::addRxPDOs()
     /* add Position RxPDO, not sure if it can share the same SMId */
     rxPDOPosition_ = new RxPDOPosition(2,nodeId_, deviceParams_->rxPDO2SMId_);
     bus_->getRxPDOManager()->addPDO(rxPDOPosition_);
+
+    /* add Position RxPDO, not sure if it can share the same SMId */
+    rxPDORTR_ = new RxPDORTR(nodeId_, deviceParams_->outNMTSMId_);
+    bus_->getRxPDOManager()->addPDO(rxPDORTR_);
 
     /* add Position Limit RxPDO */
     //	rxPDOPositionLimit_ = new RxPDOPositionLimit(nodeId_, deviceParams_->rxPDO2SMId_);
@@ -216,6 +225,14 @@ bool DeviceEPOS2Motor::resetDevice()
 	return true;
 }
 
+bool DeviceEPOS2Motor::setNodeGuarding(unsigned char lifetime, unsigned char multiplier) {
+	SDOManager* SDOManager = bus_->getSDOManager();
+	SDOManager->addSDO(new SDOSetGuardTime(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, lifetime)); //Set a guard time of x ms with a factor , if set_guard_time(0): Guarding disabled
+	SDOManager->addSDO(new SDOSetLifeTimeFactor(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, multiplier));
+	SDOManager->addSDO(new SDOSetAbortConnectionOptionCode(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, (lifetime*multiplier)?0x03:0x01));
+    return true;
+}
+
 bool DeviceEPOS2Motor::initDevice(signed int operation_mode)
 {
 	SDOManager* SDOManager = bus_->getSDOManager();
@@ -314,6 +331,7 @@ void DeviceEPOS2Motor::configTxPDOPositionVelocity()
 	///< Number of Mapped Application Objects
 	SDOManager->addSDO(new SDOTxPDO1SetNumberOfMappedApplicationObjects(deviceParams_->inSDOSMId_, deviceParams_->outSDOSMId_, nodeId_, 0x02));
 }
+
 
 void DeviceEPOS2Motor::configTxPDOAnalogCurrent()
 {

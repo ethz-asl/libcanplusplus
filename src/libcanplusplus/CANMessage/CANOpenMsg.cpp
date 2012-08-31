@@ -8,13 +8,15 @@
  *
  */
 
+#include <assert.h>
 #include "CANOpenMsg.hpp"
 
 
 CANOpenMsg::CANOpenMsg(int COBId, int SMId)
 :COBId_(COBId),
  SMId_(SMId),
- flag_(0)
+ flag_(0),
+ rtr_(0)
 {
 	for (int k=0;k<8; k++) {
 		value_[k] = 0;
@@ -35,13 +37,16 @@ void CANOpenMsg::getCANMsg(CAN_BusDataDes *canDataDes)
 	canDataDes->length = 0;
 	for(int l=0; l<8; l++) {
 		canDataDes->length = canDataDes->length + length_[l];
+		assert(canDataDes->length<=8);
 		for(int j=0; j<length_[l]; j++) {
-			canDataDes->value[k] = ((value_[l]>>8*j) & 0x000000ff);
+			assert(k<8);
+			canDataDes->value[k] = ((value_[l]>>(8*j)) & 0x000000ff);
 			k++;
 		}
 	}
 	canDataDes->COBId = COBId_;
 	canDataDes->flag = flag_;
+	canDataDes->rtr = rtr_;
 }
 
 void CANOpenMsg::setCANMsg(CAN_BusDataMeas *canDataMeas)
@@ -53,6 +58,7 @@ void CANOpenMsg::setCANMsg(CAN_BusDataMeas *canDataMeas)
 	}
 	COBId_ = canDataMeas->COBId;
 	flag_ = 1;
+	rtr_ = canDataMeas->rtr;
 
 	processMsg();
 }
@@ -77,6 +83,11 @@ int CANOpenMsg::getFlag()
 	return flag_;
 }
 
+int CANOpenMsg::getRTR()
+{
+	return rtr_;
+}
+
 int* CANOpenMsg::getValue()
 {
 	return value_;
@@ -90,6 +101,11 @@ int* CANOpenMsg::getLength()
 void CANOpenMsg::setFlag(int flag)
 {
 	flag_ = flag;
+}
+
+void CANOpenMsg::setRTR(int rtr)
+{
+	rtr_ = rtr;
 }
 
 void CANOpenMsg::setCOBId(int COBId)

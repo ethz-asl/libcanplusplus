@@ -44,6 +44,9 @@ public:
 	//! Reset the EPOS
 	virtual bool resetDevice();
 
+    //! Set the watchdog timeout to lifetime*multiplier, in ms
+    bool setNodeGuarding(unsigned char lifetime, unsigned char multiplier) ;
+
 	//! Initializes the EPOS
 	virtual bool initDevice(signed int operation_mode = OPERATION_MODE_VELOCITY);
 
@@ -232,6 +235,9 @@ protected:
 
 	//! PDO message to send motor position command
 	RxPDOPosition* rxPDOPosition_;
+
+	//! PDO message to send motor position command
+	RxPDORTR* rxPDORTR_;
 
 	//! PDO message to send motor position limits command
 	//RxPDOPositionLimit* rxPDOPositionLimit_;

@@ -757,7 +757,8 @@ class SDOTxPDO3ConfigureCOBID: public SDOWrite
 {
 public:
 	SDOTxPDO3ConfigureCOBID(int inSDOSMId, int outSDOSMId, int nodeId):
-		SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1802, 0x01, 0x40000380 + nodeId)
+		// SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1802, 0x01, 0x40000380 + nodeId)
+		SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1802, 0x01, 0x00000380 + nodeId)
 	{};
 	virtual ~SDOTxPDO3ConfigureCOBID(){};
 };

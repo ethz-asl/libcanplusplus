@@ -82,6 +82,11 @@ public:
 	 */
 	int getFlag();
 
+	/*! Gets RTR flag 
+	 * @return
+	 */
+	int getRTR();
+
 	/*! Gets the stack of values
 	 *
 	 * @return reference to value_[8]
@@ -97,6 +102,11 @@ public:
 	 * @param flag	if true message is sent
 	 */
 	void setFlag(int flag);
+
+	/*! Sets the RTR flag 
+	 * @param rtr if true message is a RTR frame
+	 */
+	void setRTR(int rtr);
 
 	/*! Sets the stack of values
 	 * @param value	 array of length 8
@@ -129,6 +139,8 @@ protected:
 	//! the lengths of the values in the stack value_
 	int length_[8];
 
+    //! Is it a RTR frame
+    int rtr_;
 };
 
 #endif /* CANOpenMsg_HPP_ */
