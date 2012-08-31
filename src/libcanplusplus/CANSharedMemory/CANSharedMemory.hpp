@@ -101,8 +101,11 @@ extern smCANBusDataMeas *sm_canbusdata_meas_four;
 extern SEM_ID            sm_canbusdata_meas_four_sem;
 extern CAN_BusDataMeas  *sm_canbusdata_meas_four_data;
 
+//! number of measurement messages per Bus (6xPDOPositionVelocity + 6xSDO)
 extern int nMeasMsg;
+//! number of desired messages per Bus (3xPDOVelocity + 1xPDOSync + 1xSDO)
 extern int nDesMsg;
+
 
   int   init_can_shared_memory(void);
 //  extern STATUS 	semGiveCount (SEM_ID semId);

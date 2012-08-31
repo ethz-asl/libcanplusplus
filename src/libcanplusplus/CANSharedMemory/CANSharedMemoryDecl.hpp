@@ -16,6 +16,7 @@
 
 typedef struct {
 	char flag;
+	char rtr;
 	int COBId;
 	unsigned char length;
 	unsigned char value[8];
@@ -23,6 +24,7 @@ typedef struct {
 
 typedef struct {
 	unsigned char flag;
+	unsigned char rtr;
 	int COBId;
 	unsigned char length;
 	unsigned char value[8];

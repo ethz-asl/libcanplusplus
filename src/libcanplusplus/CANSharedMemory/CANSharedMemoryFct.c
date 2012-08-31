@@ -110,7 +110,7 @@ int process_bus_des(CAN_BusDataDes *canDataDes, int iBus)
 		/* copy data */
 		for (i=0; i<nDesMsg; i++){
 			copyBusDataDes(&sm_data[i], &canDataDes[i]);
-		//				initCANBusDataDes(&sm_data[i]);
+			initCANBusDataDes(&sm_data[i]);
 		}
 		semGive(sm_sem);
 	}
@@ -305,6 +305,7 @@ void copyBusDataMeas(CAN_BusDataMeas* canDataMeasSrc, CAN_BusDataMeas* canDataMe
 void initCANBusDataMeas(CAN_BusDataMeas* canDataMeas)
 {
 	int k;
+	canDataMeas->rtr = 0;
 	canDataMeas->flag = 0;
 	canDataMeas->COBId = 0;
 	canDataMeas->length = 0;
@@ -317,6 +318,7 @@ void initCANBusDataMeas(CAN_BusDataMeas* canDataMeas)
 void initCANBusDataDes(CAN_BusDataDes* canDataDes)
 {
 	int k;
+	canDataDes->rtr = 0;
 	canDataDes->flag = 0;
 	canDataDes->COBId = 0;
 	canDataDes->length = 0;

@@ -11,7 +11,7 @@ SET(LIBNAME CAN++)	 #Name of the library that will be generated
 #   * Release (CMAKE_C_FLAGS_RELEASE or CMAKE_CXX_FLAGS_RELEASE)
 #   * RelWithDebInfo (CMAKE_C_FLAGS_RELWITHDEBINFO or CMAKE_CXX_FLAGS_RELWITHDEBINFO
 #   * MinSizeRel (CMAKE_C_FLAGS_MINSIZEREL or CMAKE_CXX_FLAGS_MINSIZEREL) 
-SET(CMAKE_BUILD_TYPE Release)
+SET(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 add_definitions(-Wall )
 
