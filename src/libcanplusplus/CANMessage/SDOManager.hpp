@@ -33,24 +33,24 @@ public:
 	/*! Adds an SDO message to the list
 	 * @param sdo 	reference to the SDO
 	 */
-	void addSDO(SDOMsg* sdo);
+	virtual void addSDO(SDOMsg* sdo);
 
 	/*! Adds an SDO message to the list
 	 *	Use this function if you have a pointer to the SDO
 	 * @param sdo reference to the SDO
 	 */
-	void addSDO(SDOMsgPtr sdo);
+	virtual void addSDO(SDOMsgPtr sdo);
 
 	/*! Gets the reference to a SDO by index
 	 * @param 	index		index of the SDO in the list
 	 * @return 	reference to SDO
 	 */
-	SDOMsg* getSDO(unsigned int index);
+	virtual SDOMsg* getSDO(unsigned int index);
 
 	/*! Gets the number of SDOs in the list
 	 * @return number of SDOs
 	 */
-	int getSize();
+	virtual int getSize();
 
 	/*! test is we are still waiting to send or receive some SDO
 	 */
@@ -60,26 +60,26 @@ public:
 	 * @param 	index		index of the SDO in the list
 	 * @return 	reference to SDO
 	 */
-	SDOMsg* operator[] (unsigned int index){return getSDO(index);}
+	virtual SDOMsg* operator[] (unsigned int index){return getSDO(index);}
 
 	/*! Gets the first SDO in the list
 	 * @return reference to SDO
 	 */
-	SDOMsg* getFirstSDO();
+	virtual SDOMsg* getFirstSDO();
 
 	/*! Gets the SDO that is sent
 	 *
 	 * @return reference to SDO
 	 */
-	SDOMsg* getSendSDO();
+	virtual SDOMsg* getSendSDO();
 
 	/*!  Gets the SDO that is received
 	 *
 	 * @return reference to SDO
 	 */
-	SDOMsg* getReceiveSDO();
+	virtual SDOMsg* getReceiveSDO();
 
-private:
+protected:
 	//! List of SDO messages that works as a buffer
 	std::list<SDOMsgPtr>sdos_;
 
