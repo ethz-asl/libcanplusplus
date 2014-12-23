@@ -14,7 +14,7 @@ SET(LIBNAME CAN++)	 #Name of the library that will be generated
 SET(CMAKE_BUILD_TYPE Release)
 
 add_definitions(-Wall )
-
+add_definitions(-fPIC)
 
 
 
