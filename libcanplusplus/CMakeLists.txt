@@ -38,7 +38,6 @@ add_library(libcanplusplus
     src/SDOWriteMsg.cpp
     src/Device.cpp
     src/DeviceManager.cpp
-    src/CanManagerBase.cpp
 )
 target_link_libraries(libcanplusplus
     ${catkin_LIBRARIES}
