@@ -1,6 +1,8 @@
 
 #pragma once
 
+
+//! Simple container of a CAN message
 class CANMsg {
  public:
   char flag;

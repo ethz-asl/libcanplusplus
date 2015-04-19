@@ -31,35 +31,36 @@ CANOpenMsg::~CANOpenMsg()
 }
 
 
-void CANOpenMsg::getCANMsg(CANMsg *canDataDes)
+void CANOpenMsg::getCANMsg(CANMsg *transmitMessage)
 {
 	int k = 0;
-	canDataDes->length = 0;
+	transmitMessage->length = 0;
 	for(int l=0; l<8; l++) {
-		canDataDes->length = canDataDes->length + length_[l];
-		assert(canDataDes->length<=8);
+		transmitMessage->length = transmitMessage->length + length_[l];
+		assert(transmitMessage->length<=8);
 		for(int j=0; j<length_[l]; j++) {
 			assert(k<8);
-			canDataDes->value[k] = ((value_[l]>>(8*j)) & 0x000000ff);
+			transmitMessage->value[k] = ((value_[l]>>(8*j)) & 0x000000ff);
 			k++;
 		}
 	}
-	canDataDes->COBId = COBId_;
-	canDataDes->flag = flag_;
-	canDataDes->rtr = rtr_;
+	transmitMessage->COBId = COBId_;
+	transmitMessage->flag = flag_;
+	transmitMessage->rtr = rtr_;
 }
 
-void CANOpenMsg::setCANMsg(CANMsg *canDataMeas)
+void CANOpenMsg::setCANMsg(CANMsg *receiveMeassage)
 {
-	length_[0] = canDataMeas->length;
-	for(int i=0; i<canDataMeas->length; i++)
+	length_[0] = receiveMeassage->length;
+	for(int i=0; i<receiveMeassage->length; i++)
 	{
-		value_[i] = canDataMeas->value[i];
+		value_[i] = receiveMeassage->value[i];
 	}
-	COBId_ = canDataMeas->COBId;
+	COBId_ = receiveMeassage->COBId;
 	flag_ = 1;
-	rtr_ = canDataMeas->rtr;
+	rtr_ = receiveMeassage->rtr;
 
+	// Hook to process the message
 	processMsg();
 }
 
@@ -119,7 +120,6 @@ void CANOpenMsg::setValue(int* value)
 	for (int k=0; k<8; k++) {
 		value_[k] = value[k];
 	}
-
 }
 
 void CANOpenMsg::setLength(int* length)
