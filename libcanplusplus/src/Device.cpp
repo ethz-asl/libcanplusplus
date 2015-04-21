@@ -11,8 +11,16 @@
 #include "libcanplusplus/Device.hpp"
 #include <stdio.h>
 
+Device::Device(int nodeId, const std::string& name)
+:nodeId_(nodeId),
+ name_(name)
+{
+
+}
+
 Device::Device(int nodeId)
-:nodeId_(nodeId)
+:nodeId_(nodeId),
+ name_()
 {
 
 }
@@ -42,4 +50,19 @@ bool Device::initDevice()
 {
 	printf("Warning: Device::initDevice is not implemented!\n");
 	return false;
+}
+
+void Device::sendSDO(SDOMsg* sdoMsg) {
+  SDOMsgPtr sdo(sdoMsg);
+  SDOManager* SDOManager = bus_->getSDOManager();
+  sdos_.push_back(sdo);
+  SDOManager->addSDO(sdo);
+}
+
+const std::string& Device::getName() const {
+  return name_;
+}
+
+void Device::setName(const std::string& name) {
+  name_ = name;
 }

@@ -12,6 +12,7 @@
 #define DEVICE_HPP_
 
 #include "Bus.hpp"
+#include <string>
 
 class Bus;
 
@@ -29,6 +30,8 @@ public:
 	 * @param nodeId	ID of CAN node
 	 */
 	Device(int nodeId);
+
+  Device(int nodeId, const std::string& name);
 
 	//! Destructor
 	virtual ~Device();
@@ -52,11 +55,22 @@ public:
 	 * @return true if successfully initialized
 	 */
 	virtual bool initDevice();
+
+  const std::string& getName() const;
+  void setName(const std::string& name);
+
+protected:
+ void sendSDO(SDOMsg* sdoMsg);
 protected:
 	//!  reference to the CAN bus the device is connected to
 	Bus* bus_;
 	//! CAN node ID of device
 	int nodeId_;
+
+	std::string name_;
+
+	//! List of SDO messages
+  std::vector<SDOMsgPtr> sdos_;
 
 };
 
