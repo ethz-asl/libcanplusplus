@@ -2,6 +2,7 @@
 
 #include <libcanplusplus/SDOWriteMsg.hpp>
 #include <libcanplusplus/SDOReadMsg.hpp>
+#include <ros/ros.h>
 
 #define WRITE_1_BYTE 0x2f
 #define WRITE_2_BYTE 0x2b
@@ -24,7 +25,10 @@ protected:
       if (inputMsg_->getValue()[0] == 0x80)
       {
         ///< Check for recData[0]==0x60! recData[0]==0x80 means an error happend
-        printf("\e[0;31mAN ERROR HAPPEND. CAN'T WRITE CHECK CHAP. 12.3 of the firmware specification for the error code: %02X%02X%02X%02X\n\e[0m",inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4]);
+        ROS_ERROR("SDO Error: Can't write! Error code: %02X%02X%02X%02X Output msg: COB ID: %04X Data: %02X %02X %02X %02X %02X %02X %02X %02X",
+                      inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4],
+                      outputMsg_->getCOBId(),
+                      outputMsg_->getValue()[0], outputMsg_->getValue()[1], outputMsg_->getValue()[2], outputMsg_->getValue()[3], outputMsg_->getValue()[4], outputMsg_->getValue()[5], outputMsg_->getValue()[6], outputMsg_->getValue()[7]);
       }
     }
   }

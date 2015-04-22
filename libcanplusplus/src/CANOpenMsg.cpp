@@ -10,7 +10,7 @@
 
 #include <assert.h>
 #include "libcanplusplus/CANOpenMsg.hpp"
-
+#include <ros/ros.h>
 
 CANOpenMsg::CANOpenMsg(int COBId, int SMId)
 :COBId_(COBId),
@@ -49,16 +49,23 @@ void CANOpenMsg::getCANMsg(CANMsg *transmitMessage)
 	transmitMessage->rtr = rtr_;
 }
 
-void CANOpenMsg::setCANMsg(CANMsg *receiveMeassage)
+void CANOpenMsg::setCANMsg(CANMsg *receiveMessage)
 {
-	length_[0] = receiveMeassage->length;
-	for(int i=0; i<receiveMeassage->length; i++)
+//  ROS_INFO("CANOpenMsg:setCANMsg COBID: 0x%02X length: %d Data: %02X %02X %02X %02X %02X %02X %02X %02X",
+//           receiveMessage->COBId,
+//           receiveMessage->length,
+//           receiveMessage->value[0], receiveMessage->value[1], receiveMessage->value[2], receiveMessage->value[3],
+//           receiveMessage->value[4], receiveMessage->value[5], receiveMessage->value[6], receiveMessage->value[7]
+//            );
+
+	length_[0] = receiveMessage->length;
+	for(int i=0; i<receiveMessage->length; i++)
 	{
-		value_[i] = receiveMeassage->value[i];
+		value_[i] = receiveMessage->value[i];
 	}
-	COBId_ = receiveMeassage->COBId;
+	//COBId_ = receiveMessage->COBId; // leads to problems
 	flag_ = 1;
-	rtr_ = receiveMeassage->rtr;
+	rtr_ = receiveMessage->rtr;
 
 	// Hook to process the message
 	processMsg();
