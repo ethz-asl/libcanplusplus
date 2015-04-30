@@ -49,7 +49,7 @@ public:
   }
 protected:
 
-//  int data_;
+  int data_;
 
   virtual void processReceivedMsg()
   {
@@ -70,7 +70,7 @@ protected:
       }
     }
 
-    //data_ = (inputMsg_->getValue()[4] + (inputMsg_->getValue()[5]<<8) + (inputMsg_->getValue()[6]<<16) + (inputMsg_->getValue()[7]<<24));
+    data_ = (inputMsg_->getValue()[4] + (inputMsg_->getValue()[5]<<8) + (inputMsg_->getValue()[6]<<16) + (inputMsg_->getValue()[7]<<24));
 
   }
 
@@ -256,6 +256,15 @@ public:
 ----------------------------- Initialization ----------------------------
 ********************************************************************* **/
 //////////////////////////////////////////////////////////////////////////////
+class SDOControlword: public SDOWrite
+{
+public:
+  SDOControlword(int inSDOSMId, int outSDOSMId, int nodeId, int controlword):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_2_BYTE, 0x6040, 0x00, controlword)
+  {};
+  virtual ~SDOControlword(){};
+};
+//////////////////////////////////////////////////////////////////////////////
 class SDOShutdown: public SDOWrite
 {
 public:
@@ -363,7 +372,31 @@ public:
   {};
   virtual ~SDOSetLifeTimeFactor(){};
 };
+//////////////////////////////////////////////////////////////////////////////
+class SDOReadProducerHeartbeatTime: public SDORead
+{
+public:
+  SDOReadProducerHeartbeatTime(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDORead(inSDOSMId, outSDOSMId, nodeId, 0x1017, 0x00),
+    time_(0)
+  {};
 
+
+  virtual void processReceivedMsg()
+  {
+    SDORead::processReceivedMsg();
+    time_ = (uint16_t)(inputMsg_->getValue()[0] + (inputMsg_->getValue()[1]<<8));
+  }
+
+  virtual ~SDOReadProducerHeartbeatTime(){};
+
+  uint16_t getTime() const {
+    return time_;
+  }
+
+private:
+  uint16_t time_;
+};
 
 /***********************************************************************
 ------------------------------ Utilities --------------------------------
@@ -751,5 +784,7 @@ public:
   {};
   virtual ~SDORxPDO4SetMapping(){};
 };
+
+
 
 } // namespace
