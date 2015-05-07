@@ -19,16 +19,120 @@ public:
   {};
   virtual ~SDOWrite(){};
 protected:
+
+  bool getErrorName(std::string& name) const {
+    const int32_t error = (inputMsg_->getValue()[4] + (inputMsg_->getValue()[5]<<8) + (inputMsg_->getValue()[6]<<16) + (inputMsg_->getValue()[7]<<24));
+    switch (error) {
+      case 0x00000000:
+        name = std::string{"No Communication Error"};
+        break;
+      case 0x05030000:
+        name = std::string{"Toggle Error"};
+        break;
+      case 0x05040000:
+        name = std::string{"SDO Time Out"};
+        break;
+      case 0x05040001:
+        name = std::string{"Client / Server Specifier Error"};
+        break;
+      case 0x05040005:
+        name = std::string{"Out of Memory Error"};
+        break;
+      case 0x06010000:
+        name = std::string{"Access Error"};
+        break;
+      case 0x06010001:
+        name = std::string{"Write Only"};
+        break;
+      case 0x06010002:
+        name = std::string{"Read Only"};
+        break;
+      case 0x06020000:
+        name = std::string{"Object does not exist Error"};
+        break;
+      case 0x06040041:
+        name = std::string{"PDO mapping Error"};
+        break;
+      case 0x06040042:
+        name = std::string{"PDO Length Error"};
+        break;
+      case 0x06040043:
+        name = std::string{"General Parameter Error"};
+        break;
+      case 0x06040047:
+        name = std::string{"General internal Incompatibility Error"};
+        break;
+      case 0x06060000:
+        name = std::string{"Hardware Error"};
+        break;
+      case 0x06070010:
+        name = std::string{"Service Parameter Error"};
+        break;
+      case 0x06070012:
+        name = std::string{"Service Parameter too long Error"};
+        break;
+      case 0x06070013:
+        name = std::string{"Service Parameter too short Error"};
+        break;
+      case 0x06090011:
+        name = std::string{"Object Subindex Error"};
+        break;
+      case 0x06090030:
+        name = std::string{"Value Range Error"};
+        break;
+      case 0x06090031:
+        name = std::string{"Value too high Error"};
+        break;
+      case 0x06090032:
+        name = std::string{"Value too low Error"};
+        break;
+      case 0x06090036:
+        name = std::string{"Maximum less Minimum Error"};
+        break;
+      case 0x08000000:
+        name = std::string{"General Error"};
+        break;
+      case 0x08000020:
+        name = std::string{"Transfer or store Error"};
+        break;
+      case 0x08000021:
+        name = std::string{"Local Control Error"};
+        break;
+      case 0x08000022:
+          name = std::string{"Wrong Device State"};
+          break;
+      default:
+        return false;
+    }
+    return true;
+  }
+
+
   virtual void processReceivedMsg()
   {
     if (inputMsg_->getValue()[1] == outputMsg_->getValue()[1] && inputMsg_->getValue()[2] == outputMsg_->getValue()[2]) {
       if (inputMsg_->getValue()[0] == 0x80)
       {
-        ///< Check for recData[0]==0x60! recData[0]==0x80 means an error happend
-        ROS_ERROR("SDO Error: Can't write! Error code: %02X%02X%02X%02X Output msg: COB ID: %04X Data: %02X %02X %02X %02X %02X %02X %02X %02X",
-                      inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4],
-                      outputMsg_->getCOBId(),
-                      outputMsg_->getValue()[0], outputMsg_->getValue()[1], outputMsg_->getValue()[2], outputMsg_->getValue()[3], outputMsg_->getValue()[4], outputMsg_->getValue()[5], outputMsg_->getValue()[6], outputMsg_->getValue()[7]);
+
+       std::string errorName;
+        if (getErrorName(errorName)) {
+          ROS_ERROR("SDO Write Error: %s! Error code: %02X%02X%02X%02X, COB ID: %04X, message: %02X %02X %02X %02X %02X %02X %02X %02X",
+                    errorName.c_str(),
+                    inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4],
+                    outputMsg_->getCOBId(),
+                    outputMsg_->getValue()[0], outputMsg_->getValue()[1], outputMsg_->getValue()[2], outputMsg_->getValue()[3], outputMsg_->getValue()[4], outputMsg_->getValue()[5], outputMsg_->getValue()[6], outputMsg_->getValue()[7]);
+        }
+        else {
+          ///< Check for recData[0]==0x60! recData[0]==0x80 means an error happend
+          ROS_ERROR("SDO Error: Can't write! Error code: %02X%02X%02X%02X Output msg: COB ID: %04X Data: %02X %02X %02X %02X %02X %02X %02X %02X",
+                        inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4],
+                        outputMsg_->getCOBId(),
+                        outputMsg_->getValue()[0], outputMsg_->getValue()[1], outputMsg_->getValue()[2], outputMsg_->getValue()[3], outputMsg_->getValue()[4], outputMsg_->getValue()[5], outputMsg_->getValue()[6], outputMsg_->getValue()[7]);
+        }
+
+
+
+
       }
     }
   }
