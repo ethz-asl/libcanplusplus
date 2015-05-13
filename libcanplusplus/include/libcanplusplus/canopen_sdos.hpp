@@ -489,7 +489,7 @@ public:
   virtual void processReceivedMsg()
   {
     SDORead::processReceivedMsg();
-    time_ = (uint16_t)(inputMsg_->getValue()[0] + (inputMsg_->getValue()[1]<<8));
+    time_ = readuint16();
   }
 
   virtual ~SDOReadProducerHeartbeatTime(){};

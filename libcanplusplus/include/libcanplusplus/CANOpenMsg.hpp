@@ -12,6 +12,7 @@
 #define CANOpenMsg_HPP_
 
 #include "libcanplusplus/CANMsg.hpp"
+#include <stdint.h>
 
 //! General CANOpen message container
 /*! The message can be either a sent or received message.
@@ -123,6 +124,7 @@ public:
 	 */
 	void setCOBId(int COBId);
 
+
 protected:
 	//! Communication Object Identifier
 	int COBId_;
@@ -133,14 +135,15 @@ protected:
 	//! if true, the message will be sent or the message is received
 	int flag_;
 
-	//! data of the CAN message
+	/*! Data of the CAN message
+	 */
 	int value_[8];
 
 	//! the lengths of the values in the stack value_
 	int length_[8];
 
-    //! Is it a RTR frame
-    int rtr_;
+  //! Is it a RTR frame
+  int rtr_;
 };
 
 #endif /* CANOpenMsg_HPP_ */

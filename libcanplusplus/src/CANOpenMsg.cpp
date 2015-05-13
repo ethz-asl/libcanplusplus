@@ -19,7 +19,7 @@ CANOpenMsg::CANOpenMsg(int COBId, int SMId)
  rtr_(0)
 {
 	for (int k=0;k<8; k++) {
-		value_[k] = 0;
+	  value_[k] = 0;
 		length_[k] = 0;
 	}
 }
@@ -125,7 +125,7 @@ void CANOpenMsg::setCOBId(int COBId)
 void CANOpenMsg::setValue(int* value)
 {
 	for (int k=0; k<8; k++) {
-		value_[k] = value[k];
+	  value_[k] = value[k];
 	}
 }
 

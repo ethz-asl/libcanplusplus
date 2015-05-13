@@ -96,6 +96,31 @@ public:
 	 */
 	void receiveMsg(CANMsg *canDataMeas);
 
+  inline uint16_t readuint16() const
+  {
+      uint16_t value;
+      value  = ((uint16_t)inputMsg_->getValue()[5] << 8);
+      value |= ((uint16_t)inputMsg_->getValue()[4]);
+      return value;
+  }
+
+  inline int16_t readint16() const
+  {
+      int16_t value;
+      value  = ((int16_t)inputMsg_->getValue()[5] << 8);
+      value |= ((int16_t)inputMsg_->getValue()[4]);
+      return value;
+  }
+
+  inline int32_t readint32() const
+  {
+      int32_t value;
+      value  = ((int32_t)inputMsg_->getValue()[7] << 24);
+      value |= ((int32_t)inputMsg_->getValue()[6] << 16);
+      value |= ((int32_t)inputMsg_->getValue()[5] << 8);
+      value |= ((int32_t)inputMsg_->getValue()[4]);
+      return value;
+  }
 
 
 protected:
@@ -125,6 +150,7 @@ protected:
 
 	//! output CAN message that will be sent to the CAN node
 	CANOpenMsg* outputMsg_;
+
 };
 
 //! Boost shared point of an SDO message

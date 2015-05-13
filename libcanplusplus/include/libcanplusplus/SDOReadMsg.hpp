@@ -13,6 +13,8 @@
 
 #include "libcanplusplus/SDOMsg.hpp"
 
+
+
 //! Service Data Reading Object Message
 /*!	Derive a class from this class to read data from a CAN node via SDO
  * @ingroup robotCAN
@@ -43,6 +45,7 @@ protected:
 
 	//! Hook function that is invoked when the input message is received
 	virtual void processReceivedMsg();
+
 };
 
 #endif /* SDOREADMSG_HPP_ */
