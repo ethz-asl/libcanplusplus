@@ -116,18 +116,22 @@ protected:
 
        std::string errorName;
         if (getErrorName(errorName)) {
-          ROS_ERROR("SDO Write Error: %s! Error code: %02X%02X%02X%02X, COB ID: %04X, message: %02X %02X %02X %02X %02X %02X %02X %02X",
-                    errorName.c_str(),
-                    inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4],
-                    outputMsg_->getCOBId(),
-                    outputMsg_->getValue()[0], outputMsg_->getValue()[1], outputMsg_->getValue()[2], outputMsg_->getValue()[3], outputMsg_->getValue()[4], outputMsg_->getValue()[5], outputMsg_->getValue()[6], outputMsg_->getValue()[7]);
+          ROS_ERROR("SDO Write Error: Node: 0x%02X: %s! Error code: %02X%02X%02X%02X, "
+              "COB ID: %04X, Index: 0x%02X%02X, Subindex: 0x%02X, CAN message: %02X %02X %02X %02X %02X %02X %02X %02X",
+                     outputMsg_->getCOBId()-0x600,
+                     errorName.c_str(),
+                     inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4],
+                     outputMsg_->getCOBId(),
+                     inputMsg_->getValue()[2], inputMsg_->getValue()[1], // index
+                     inputMsg_->getValue()[3], // subindex
+                     inputMsg_->getValue()[0], inputMsg_->getValue()[1], inputMsg_->getValue()[2], inputMsg_->getValue()[3], inputMsg_->getValue()[4], inputMsg_->getValue()[5], inputMsg_->getValue()[6], inputMsg_->getValue()[7]);
         }
         else {
           ///< Check for recData[0]==0x60! recData[0]==0x80 means an error happend
           ROS_ERROR("SDO Error: Can't write! Error code: %02X%02X%02X%02X Output msg: COB ID: %04X Data: %02X %02X %02X %02X %02X %02X %02X %02X",
                         inputMsg_->getValue()[7], inputMsg_->getValue()[6], inputMsg_->getValue()[5], inputMsg_->getValue()[4],
                         outputMsg_->getCOBId(),
-                        outputMsg_->getValue()[0], outputMsg_->getValue()[1], outputMsg_->getValue()[2], outputMsg_->getValue()[3], outputMsg_->getValue()[4], outputMsg_->getValue()[5], outputMsg_->getValue()[6], outputMsg_->getValue()[7]);
+                        inputMsg_->getValue()[0], inputMsg_->getValue()[1], inputMsg_->getValue()[2], inputMsg_->getValue()[3], inputMsg_->getValue()[4], inputMsg_->getValue()[5], inputMsg_->getValue()[6], inputMsg_->getValue()[7]);
         }
 
 
@@ -606,6 +610,16 @@ public:
   {};
   virtual ~SDOTxPDO2ConfigureCOBID(){};
 };
+
+class SDOTxPDO2Disable: public SDOWrite
+{
+public:
+  SDOTxPDO2Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1801, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDOTxPDO2Disable(){};
+};
+
 
 //////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO2SetTransmissionType: public SDOWrite
