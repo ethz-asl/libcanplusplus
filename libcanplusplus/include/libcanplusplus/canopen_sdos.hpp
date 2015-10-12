@@ -610,7 +610,7 @@ public:
   {};
   virtual ~SDOTxPDO2ConfigureCOBID(){};
 };
-
+//////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO2Disable: public SDOWrite
 {
 public:
@@ -619,7 +619,15 @@ public:
   {};
   virtual ~SDOTxPDO2Disable(){};
 };
-
+//////////////////////////////////////////////////////////////////////////////
+class SDOTxPDO3Disable: public SDOWrite
+{
+public:
+  SDOTxPDO3Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1802, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDOTxPDO3Disable(){};
+};
 
 //////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO2SetTransmissionType: public SDOWrite
