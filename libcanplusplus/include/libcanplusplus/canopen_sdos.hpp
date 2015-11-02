@@ -480,6 +480,17 @@ public:
   {};
   virtual ~SDOSetLifeTimeFactor(){};
 };
+
+//////////////////////////////////////////////////////////////////////////////
+class SDOWriteProducerHeartbeatTime: public SDOWrite
+{
+public:
+  SDOWriteProducerHeartbeatTime(int inSDOSMId, int outSDOSMId, int nodeId, int time_ms):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_2_BYTE, 0x1017, 0x00, time_ms)
+  {};
+  virtual ~SDOSetGuardTime(){};
+};
+
 //////////////////////////////////////////////////////////////////////////////
 class SDOReadProducerHeartbeatTime: public SDORead
 {
