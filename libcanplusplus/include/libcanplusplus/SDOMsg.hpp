@@ -96,6 +96,13 @@ public:
 	 */
 	void receiveMsg(CANMsg *canDataMeas);
 
+	inline uint8_t readuint8() const
+	{
+	  uint8_t value;
+	  value  = ((uint8_t)inputMsg_->getValue()[4]);
+	  return value;
+	}
+
   inline uint16_t readuint16() const
   {
       uint16_t value;

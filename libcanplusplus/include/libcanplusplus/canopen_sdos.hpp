@@ -922,6 +922,51 @@ public:
   virtual ~SDORxPDO4SetMapping(){};
 };
 
+//////////////////////////////////////////////////////////////////////////////
+class SDOReadErrorRegister: public SDORead
+{
+public:
+  SDOReadErrorRegister(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDORead(inSDOSMId, outSDOSMId, nodeId, 0x1001, 0x00)
+  {};
+  virtual ~SDOReadErrorRegister(){};
+
+  virtual void processReceivedMsg()
+  {
+    SDORead::processReceivedMsg();
+  }
+
+  std::string getErrorAsString() {
+    uint8_t error = readuint8();
+    std::string errors;
+
+    if (error & 0x01 ) {
+      errors += std::string{"generic error, "};
+    }
+    if (error & 0x02 ) {
+      errors += std::string{"current, "};
+    }
+    if (error & 0x04 ) {
+      errors += std::string{"voltage, "};
+    }
+    if (error & 0x08 ) {
+      errors += std::string{"temperature, "};
+    }
+    if (error & 0x10 ) {
+      errors += std::string{"communication error, "};
+    }
+    if (error & 0x20 ) {
+      errors += std::string{"device profile specific, "};
+    }
+    // if (error & 0x40 )  // ignore
+
+    if (error & 0x80 ) {
+      errors += std::string{"manufacturer specific"};
+    }
+    return errors;
+  }
+
+};
 
 
 } // namespace

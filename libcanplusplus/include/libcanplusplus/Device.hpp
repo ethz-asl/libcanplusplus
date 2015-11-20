@@ -59,8 +59,11 @@ public:
   const std::string& getName() const;
   void setName(const std::string& name);
 
+
+
 protected:
  void sendSDO(SDOMsg* sdoMsg);
+ bool checkSDOResponses(bool& success);
 protected:
 	//!  reference to the CAN bus the device is connected to
 	Bus* bus_;

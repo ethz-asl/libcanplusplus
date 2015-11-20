@@ -12,6 +12,7 @@ catkin_package(
 
 add_definitions(-Wall )
 add_definitions(-fPIC)
+add_definitions(-std=c++11)
 
 
 find_package(Boost REQUIRED)

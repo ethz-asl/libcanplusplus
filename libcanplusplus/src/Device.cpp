@@ -66,3 +66,24 @@ const std::string& Device::getName() const {
 void Device::setName(const std::string& name) {
   name_ = name;
 }
+
+bool Device::checkSDOResponses(bool& success) {
+  // Check if SDOS are processed
+  bool done = true;
+  // If one of the SDOs could not be sent, this flag will be false:
+  success = true;
+
+  for (auto& sdo : sdos_) {
+    // Check if SDO was received or has a timeout
+    if (!sdo->getIsReceived() &&  !sdo->hasTimeOut()) {
+      done = false;
+    }
+    if(sdo->hasTimeOut()) {
+      success = false;
+    }
+  }
+  if (done) {
+    sdos_.clear();
+  }
+  return done;
+}
