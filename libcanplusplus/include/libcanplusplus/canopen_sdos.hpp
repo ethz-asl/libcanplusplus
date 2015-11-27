@@ -577,7 +577,15 @@ public:
   {};
   virtual ~SDOTxPDO1ConfigureCOBID(){};
 };
-
+//////////////////////////////////////////////////////////////////////////////
+class SDOTxPDO1Disable: public SDOWrite
+{
+public:
+	SDOTxPDO1Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1800, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDOTxPDO1Disable(){};
+};
 //////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO1SetTransmissionType: public SDOWrite
 {
@@ -630,15 +638,6 @@ public:
   {};
   virtual ~SDOTxPDO2Disable(){};
 };
-//////////////////////////////////////////////////////////////////////////////
-class SDOTxPDO3Disable: public SDOWrite
-{
-public:
-  SDOTxPDO3Disable(int inSDOSMId, int outSDOSMId, int nodeId):
-    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1802, 0x01, 0xFFFFFFFF)
-  {};
-  virtual ~SDOTxPDO3Disable(){};
-};
 
 //////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO2SetTransmissionType: public SDOWrite
@@ -682,7 +681,15 @@ public:
   {};
   virtual ~SDOTxPDO3ConfigureCOBID(){};
 };
-
+//////////////////////////////////////////////////////////////////////////////
+class SDOTxPDO3Disable: public SDOWrite
+{
+public:
+  SDOTxPDO3Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1802, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDOTxPDO3Disable(){};
+};
 //////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO3SetTransmissionType: public SDOWrite
 {
@@ -725,7 +732,15 @@ public:
   {};
   virtual ~SDOTxPDO4ConfigureCOBID(){};
 };
-
+//////////////////////////////////////////////////////////////////////////////
+class SDOTxPDO4Disable: public SDOWrite
+{
+public:
+	SDOTxPDO4Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1803, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDOTxPDO4Disable(){};
+};
 //////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO4SetTransmissionType: public SDOWrite
 {
