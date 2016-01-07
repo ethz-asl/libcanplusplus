@@ -789,6 +789,16 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////////////
+class SDORxPDO1Disable: public SDOWrite
+{
+public:
+  SDORxPDO1Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1400, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDORxPDO1Disable(){};
+};
+
+//////////////////////////////////////////////////////////////////////////////
 class SDORxPDO1SetTransmissionType: public SDOWrite
 {
 public:
@@ -829,6 +839,16 @@ public:
     SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1401, 0x01, 0x40000300 + nodeId)
   {};
   virtual ~SDORxPDO2ConfigureCOBID(){};
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class SDORxPDO2Disable: public SDOWrite
+{
+public:
+	SDORxPDO2Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1401, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDORxPDO2Disable(){};
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -875,6 +895,16 @@ public:
 };
 
 //////////////////////////////////////////////////////////////////////////////
+class SDORxPDO3Disable: public SDOWrite
+{
+public:
+	SDORxPDO3Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1402, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDORxPDO3Disable(){};
+};
+
+//////////////////////////////////////////////////////////////////////////////
 class SDORxPDO3SetTransmissionType: public SDOWrite
 {
 public:
@@ -915,6 +945,16 @@ public:
     SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1403, 0x01, 0x40000500 + nodeId)
   {};
   virtual ~SDORxPDO4ConfigureCOBID(){};
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class SDORxPDO4Disable: public SDOWrite
+{
+public:
+	SDORxPDO4Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1403, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDORxPDO4Disable(){};
 };
 
 //////////////////////////////////////////////////////////////////////////////
