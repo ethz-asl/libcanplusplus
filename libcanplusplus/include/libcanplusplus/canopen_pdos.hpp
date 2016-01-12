@@ -25,7 +25,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 class TxPDONMT: public CANOpenMsg {
 public:
-  TxPDONMT(int nodeId, int SMId):CANOpenMsg(txPDONMT+nodeId, SMId),
+  TxPDONMT(int nodeId):CANOpenMsg(txPDONMT+nodeId, 0),
   state_(0),
   timeReceived_()
   {
@@ -44,22 +44,22 @@ public:
 
   bool isBootup() const
   {
-    return (state_ & (1<<0x00));
+    return (state_ == 0x00);
   };
 
   bool isStopped() const
   {
-    return (state_ & (1<<0x04));
+    return (state_ == 0x04);
   };
 
   bool isOperational() const
   {
-    return (state_ & (1<<0x05));
+    return (state_ == 0x05);
   };
 
   bool isPreOperational() const
   {
-    return (state_ & (1<<0x7F));
+    return (state_ ==  0x7F);
   };
 
   const std::chrono::time_point<std::chrono::steady_clock>& getTime() const {
