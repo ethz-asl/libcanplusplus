@@ -11,9 +11,9 @@
 #ifndef DEVICE_HPP_
 #define DEVICE_HPP_
 
-#include "Bus.hpp"
 #include <string>
-
+#include "Bus.hpp"
+#include "canopen_pdos.hpp"
 class Bus;
 
 
@@ -31,7 +31,7 @@ public:
 	 */
 	Device(int nodeId);
 
-  Device(int nodeId, const std::string& name);
+	Device(int nodeId, const std::string& name);
 
 	//! Destructor
 	virtual ~Device();
@@ -44,27 +44,49 @@ public:
 	/*! Adds PDOs to the RxPDO manager
 	 *  This function is invoked by the device manager when this device is added.
 	 */
-	virtual void addRxPDOs();
+	virtual void addRxPDOs() = 0;
 
 	/*! Adds PDOs to the TxPDO manager
 	 * This function is invoked by the device manager when this device is added.
 	 */
-	virtual void addTxPDOs();
+	virtual void addTxPDOs() = 0;
 
 	/*! Initialize the device (send SDOs to initialize it)
 	 * @return true if successfully initialized
 	 */
-	virtual bool initDevice();
+	virtual bool initDevice() = 0;
 
-  const std::string& getName() const;
-  void setName(const std::string& name);
+	/*! Initialize the heartbeat reception.
+	 * This does NOT configure the heartbeat generation on the device. Do that manually in the initDevice function.
+	 * @param heartBeatTime time in ms at which the producer sends heartbeat messages
+	 * @return true if successfully initialized
+	 */
+	bool initHeartbeat(const unsigned int heartBeatTime);
 
+	/*! Checks if the last heartbeat message has arrived recently
+	 * @return true if within time window
+	 */
+	bool checkHeartbeat();
 
+	virtual void sendNMTEnterPreOperational();
+	virtual void sendNMTStartRemoteNode();
+	virtual void setNMTRestartNode();
+
+	const std::string& getName() const;
+	void setName(const std::string& name);
 
 protected:
- void sendSDO(SDOMsg* sdoMsg);
- bool checkSDOResponses(bool& success);
+	void sendSDO(SDOMsg* sdoMsg);
+	bool checkSDOResponses(bool& success);
+
 protected:
+	//! the state the device is in
+	enum class CANState : uint8_t {
+		stopped = 0x4,
+		operational = 0x5,
+		preOperational = 0x7F
+	};
+
 	//!  reference to the CAN bus the device is connected to
 	Bus* bus_;
 	//! CAN node ID of device
@@ -73,8 +95,14 @@ protected:
 	std::string name_;
 
 	//! List of SDO messages
-  std::vector<SDOMsgPtr> sdos_;
+	std::vector<SDOMsgPtr> sdos_;
 
+	CANState canState_;
+
+	//! Heartbeat time interval [ms]. Set to 0 to disable heartbeat message reception checking.
+	uint16_t producerHeartBeatTime_;
+
+	canopen::TxPDONMT* txPDONMT_;
 };
 
 #endif /* DEVICE_HPP_ */

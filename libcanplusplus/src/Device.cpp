@@ -8,21 +8,25 @@
  *
  */
 
-#include "libcanplusplus/Device.hpp"
 #include <stdio.h>
+#include <chrono>
+#include "libcanplusplus/Device.hpp"
+#include "libcanplusplus/canopen_sdos.hpp"
 
 Device::Device(int nodeId, const std::string& name)
-:nodeId_(nodeId),
- name_(name)
+:bus_(nullptr),
+ nodeId_(nodeId),
+ name_(name),
+ canState_(CANState::stopped),
+ producerHeartBeatTime_(0),
+ txPDONMT_(nullptr)
 {
 
 }
 
 Device::Device(int nodeId)
-:nodeId_(nodeId),
- name_()
+:Device(nodeId, std::string())
 {
-
 }
 
 Device::~Device()
@@ -35,22 +39,6 @@ void Device::setBus(Bus* bus)
 	bus_ = bus;
 }
 
-void Device::addRxPDOs()
-{
-	printf("Warning: Device::addRxPDOs is not implemented!\n");
-}
-
-void Device::addTxPDOs()
-{
-	printf("Warning: Device::addTxPDOs is not implemented!\n");
-}
-
-
-bool Device::initDevice()
-{
-	printf("Warning: Device::initDevice is not implemented!\n");
-	return false;
-}
 
 void Device::sendSDO(SDOMsg* sdoMsg) {
   SDOMsgPtr sdo(sdoMsg);
@@ -66,6 +54,61 @@ const std::string& Device::getName() const {
 void Device::setName(const std::string& name) {
   name_ = name;
 }
+
+bool Device::initHeartbeat(const unsigned int heartBeatTime) {
+
+	producerHeartBeatTime_ = heartBeatTime;
+
+	if(producerHeartBeatTime_ != 0) {
+		txPDONMT_ = new canopen::TxPDONMT(nodeId_);
+		bus_->getTxPDOManager()->addPDO(txPDONMT_);
+	}
+
+	return true;
+}
+
+bool Device::checkHeartbeat() {
+	// Check if heartbeat supervision is active.
+	if (producerHeartBeatTime_ == 0) {
+		// Heartbeat supervision is not active.  It is fine.
+		return true;
+	}
+
+	if(txPDONMT_->isBootup() || txPDONMT_->isPreOperational()) {
+		canState_ = CANState::preOperational;
+	}else if(txPDONMT_->isOperational()) {
+		canState_ = CANState::operational;
+	}else{
+		canState_ = CANState::stopped;
+	}
+
+	// Check if device is initialized.
+	if (canState_ != CANState::operational) {
+		// Device is not initialized. It is fine.
+		return true;
+	}
+
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - txPDONMT_->getTime()).count() <= static_cast<int64_t>(producerHeartBeatTime_);
+}
+
+
+void Device::sendNMTEnterPreOperational() {
+	sdos_.clear();
+	sendSDO(new canopen::SDONMTEnterPreOperational(0, 0, nodeId_));
+}
+
+void Device::sendNMTStartRemoteNode() {
+	sdos_.clear();
+	sendSDO(new canopen::SDONMTStartRemoteNode(0, 0, nodeId_));
+}
+
+void Device::setNMTRestartNode() {
+	sdos_.clear();
+	sendSDO(new canopen::SDONMTResetNode(0, 0, nodeId_));
+	canState_ = CANState::stopped;
+}
+
+
 
 bool Device::checkSDOResponses(bool& success) {
   // Check if SDOS are processed

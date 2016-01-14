@@ -62,6 +62,10 @@ public:
     return (state_ ==  0x7F);
   };
 
+  uint8_t getState() const {
+	  return state_;
+  }
+
   const std::chrono::time_point<std::chrono::steady_clock>& getTime() const {
     return timeReceived_;
   }
