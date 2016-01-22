@@ -599,15 +599,6 @@ public:
   virtual ~SDOTxPDO1ConfigureCOBID(){};
 };
 //////////////////////////////////////////////////////////////////////////////
-class SDOTxPDO1Disable: public SDOWrite
-{
-public:
-	SDOTxPDO1Disable(int inSDOSMId, int outSDOSMId, int nodeId):
-    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1800, 0x01, 0xFFFFFFFF)
-  {};
-  virtual ~SDOTxPDO1Disable(){};
-};
-//////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO1SetTransmissionType: public SDOWrite
 {
 public:
