@@ -20,6 +20,7 @@ find_package(Boost REQUIRED)
 
 include_directories(include)
 include_directories(${catkin_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 
 if(COMPILE_XENOMAI)
 	set(libCAN_INCL ${libCAN_INCL}
