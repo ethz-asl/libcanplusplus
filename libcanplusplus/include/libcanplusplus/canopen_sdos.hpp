@@ -558,6 +558,27 @@ public:
 /*********************************************************************
  * PDO 1 Parameter
  *********************************************************************/
+
+//////////////////////////////////////////////////////////////////////////////
+class SDOTxPDO1Disable: public SDOWrite
+{
+public:
+  SDOTxPDO1Disable(int inSDOSMId, int outSDOSMId, int nodeId):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1800, 0x01, 0xFFFFFFFF)
+  {};
+  virtual ~SDOTxPDO1Disable(){};
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class SDOTxPDO1SetInhibitTime: public SDOWrite
+{
+public:
+  SDOTxPDO1SetInhibitTime(int inSDOSMId, int outSDOSMId, int nodeId, int time_100us):
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1800, 0x03, time_100us)
+  {};
+  virtual ~SDOTxPDO1SetInhibitTime(){};
+};
+
 //////////////////////////////////////////////////////////////////////////////
 class SDOTxPDO1SetNumberOfMappedApplicationObjects: public SDOWrite
 {
