@@ -574,7 +574,7 @@ class SDOTxPDO1SetInhibitTime: public SDOWrite
 {
 public:
   SDOTxPDO1SetInhibitTime(int inSDOSMId, int outSDOSMId, int nodeId, int time_100us):
-    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1800, 0x03, time_100us)
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_2_BYTE, 0x1800, 0x03, time_100us)
   {};
   virtual ~SDOTxPDO1SetInhibitTime(){};
 };
