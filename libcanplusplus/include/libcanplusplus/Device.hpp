@@ -26,6 +26,14 @@ class Bus;
 class Device {
 public:
 
+	enum class CANStates : uint8_t {
+		initializing = 0,
+		stopped = 1,
+		preOperational = 2,
+		operational = 3,
+		missing = 4 // if no life sign from the node after a certain time
+	};
+
 	/*! Constructor
 	 * @param nodeId	ID of CAN node
 	 */
@@ -75,6 +83,8 @@ public:
 	virtual void setNMTRestartNode();
 
 
+	CANStates getCANState() const;
+
 	const std::string& getName() const;
 	void setName(const std::string& name);
 
@@ -83,13 +93,6 @@ protected:
 	bool checkSDOResponses(bool& success);
 
 protected:
-	//! the state the device is in
-	enum class CANState : uint8_t {
-		initializing = 0x0,
-		stopped = 0x4,
-		operational = 0x5,
-		preOperational = 0x7F
-	};
 
 	//!  reference to the CAN bus the device is connected to
 	Bus* bus_;
@@ -101,7 +104,7 @@ protected:
 	//! List of SDO messages
 	std::vector<SDOMsgPtr> sdos_;
 
-	CANState canState_;
+	CANStates canState_;
 
 	//! Heartbeat time interval [ms]. Set to 0 to disable heartbeat message reception checking.
 	uint16_t producerHeartBeatTime_;
