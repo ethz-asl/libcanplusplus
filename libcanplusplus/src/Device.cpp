@@ -19,7 +19,7 @@ Device::Device(int nodeId, const std::string& name)
  name_(name),
  canState_(CANState::stopped),
  producerHeartBeatTime_(0),
- txPDONMT_(nullptr)
+ txPDONMT_(new canopen::TxPDONMT(nodeId_))
 {
 
 }
@@ -37,6 +37,7 @@ Device::~Device()
 void Device::setBus(Bus* bus)
 {
 	bus_ = bus;
+	bus_->getTxPDOManager()->addPDO(txPDONMT_);
 }
 
 
@@ -59,27 +60,26 @@ bool Device::initHeartbeat(const unsigned int heartBeatTime) {
 
 	producerHeartBeatTime_ = heartBeatTime;
 
-	if(producerHeartBeatTime_ != 0) {
-		txPDONMT_ = new canopen::TxPDONMT(nodeId_);
-		bus_->getTxPDOManager()->addPDO(txPDONMT_);
-	}
-
 	return true;
 }
 
 bool Device::checkHeartbeat() {
+
+	if(txPDONMT_->isBootup()) {
+		initDevice();
+		canState_ = CANState::preOperational;
+	}else if(txPDONMT_->isPreOperational()) {
+		canState_ = CANState::preOperational;
+	}else if(txPDONMT_->isOperational()) {
+		canState_ = CANState::operational;
+	}else if(txPDONMT_->isStopped()){
+		canState_ = CANState::stopped;
+	}
+
 	// Check if heartbeat supervision is active.
 	if (producerHeartBeatTime_ == 0) {
 		// Heartbeat supervision is not active.  It is fine.
 		return true;
-	}
-
-	if(txPDONMT_->isBootup() || txPDONMT_->isPreOperational()) {
-		canState_ = CANState::preOperational;
-	}else if(txPDONMT_->isOperational()) {
-		canState_ = CANState::operational;
-	}else{
-		canState_ = CANState::stopped;
 	}
 
 	// Check if device is initialized.
@@ -105,7 +105,7 @@ void Device::sendNMTStartRemoteNode() {
 void Device::setNMTRestartNode() {
 	sdos_.clear();
 	sendSDO(new canopen::SDONMTResetNode(0, 0, nodeId_));
-	canState_ = CANState::stopped;
+	canState_ = CANState::initializing;
 }
 
 

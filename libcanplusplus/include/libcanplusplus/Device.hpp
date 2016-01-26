@@ -68,9 +68,12 @@ public:
 	 */
 	bool checkHeartbeat();
 
+	/* NMT state requests
+	 * declared as virtual to be able to have "readonly" devices, whose states are not changed (overwrite with an empty function) */
 	virtual void sendNMTEnterPreOperational();
 	virtual void sendNMTStartRemoteNode();
 	virtual void setNMTRestartNode();
+
 
 	const std::string& getName() const;
 	void setName(const std::string& name);
@@ -82,6 +85,7 @@ protected:
 protected:
 	//! the state the device is in
 	enum class CANState : uint8_t {
+		initializing = 0x0,
 		stopped = 0x4,
 		operational = 0x5,
 		preOperational = 0x7F

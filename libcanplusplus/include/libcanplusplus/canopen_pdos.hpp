@@ -9,9 +9,9 @@
 
 #include <chrono>
 
-namespace canopen {
+#include "CANOpenMsg.hpp"
 
-constexpr int txPDONMT = 0x700;
+namespace canopen {
 
 //////////////////////////////////////////////////////////////////////////////
 class RxPDOSync: public CANOpenMsg {
@@ -25,8 +25,8 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 class TxPDONMT: public CANOpenMsg {
 public:
-  TxPDONMT(int nodeId):CANOpenMsg(txPDONMT+nodeId, 0),
-  state_(0),
+  TxPDONMT(int nodeId):CANOpenMsg(TxNMT+nodeId, 0),
+  state_(-1),
   timeReceived_()
   {
     //0x00 - Bootup; 0x04 - Stopped; 0x05 - Operational; 0x7F - Pre-Operational.
