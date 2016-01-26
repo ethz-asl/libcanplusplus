@@ -41,6 +41,23 @@
  *
  * @ingroup robotCAN
  */
+
+namespace canopen {
+	constexpr int TxPDO1Id = 0x180;
+	constexpr int TxPDO2Id = 0x280;
+	constexpr int TxPDO3Id = 0x380;
+	constexpr int TxPDO4Id = 0x480;
+	constexpr int TxSDOId = 0x580;
+	constexpr int TxNMT = 0x700;
+
+	constexpr int RxPDOSyncId = 0x80;
+	constexpr int RxPDO1Id = 0x200;
+	constexpr int RxPDO2Id = 0x300;
+	constexpr int RxPDO3Id = 0x400;
+	constexpr int RxPDO4Id = 0x500;
+	constexpr int RxSDOId = 0x600;
+}
+
 class CANOpenMsg {
 public:
 	/*! Constructor
