@@ -564,7 +564,7 @@ class SDOTxPDO1Disable: public SDOWrite
 {
 public:
   SDOTxPDO1Disable(int inSDOSMId, int outSDOSMId, int nodeId):
-    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1800, 0x01, 0xFFFFFFFF)
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1800, 0x01, 0x80000180 + nodeId)
   {};
   virtual ~SDOTxPDO1Disable(){};
 };
@@ -646,7 +646,7 @@ class SDOTxPDO2Disable: public SDOWrite
 {
 public:
   SDOTxPDO2Disable(int inSDOSMId, int outSDOSMId, int nodeId):
-    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1801, 0x01, 0xFFFFFFFF)
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1801, 0x01, 0x80000280 + nodeId)
   {};
   virtual ~SDOTxPDO2Disable(){};
 };
@@ -698,7 +698,7 @@ class SDOTxPDO3Disable: public SDOWrite
 {
 public:
   SDOTxPDO3Disable(int inSDOSMId, int outSDOSMId, int nodeId):
-    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1802, 0x01, 0xFFFFFFFF)
+    SDOWrite(inSDOSMId, outSDOSMId, nodeId, WRITE_4_BYTE, 0x1802, 0x01, 0x80000380 + nodeId)
   {};
   virtual ~SDOTxPDO3Disable(){};
 };
