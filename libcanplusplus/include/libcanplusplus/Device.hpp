@@ -31,7 +31,7 @@ public:
 		stopped = 1,
 		preOperational = 2,
 		operational = 3,
-		missing = 4 // if no life sign from the node after a certain time
+		missing = 4 // state to enter if no life sign from the node after a certain time
 	};
 
 	/*! Constructor
@@ -60,29 +60,34 @@ public:
 	virtual void addTxPDOs() = 0;
 
 	/*! Initialize the device (send SDOs to initialize it)
+	 * This function is automatically called after receiving the bootup message
 	 * @return true if successfully initialized
 	 */
 	virtual bool initDevice() = 0;
 
 	/*! Initialize the heartbeat reception.
 	 * This does NOT configure the heartbeat generation on the device. Do that manually in the initDevice function.
+	 * It only sets the expected heartbeat time
 	 * @param heartBeatTime time in ms at which the producer sends heartbeat messages
 	 * @return true if successfully initialized
 	 */
 	bool initHeartbeat(const unsigned int heartBeatTime);
 
-	/*! Checks if the last heartbeat message has arrived recently
+	/*! Checks if the last heartbeat message has arrived recently and save the CAN-state of the device
 	 * @return true if within time window
 	 */
 	bool checkHeartbeat();
 
 	/* NMT state requests
+	 * setNMTRestartNode() is automatically called after initialization of the can busses in the CanManager
 	 * declared as virtual to be able to have "readonly" devices, whose states are not changed (overwrite with an empty function) */
 	virtual void sendNMTEnterPreOperational();
 	virtual void sendNMTStartRemoteNode();
 	virtual void setNMTRestartNode();
 
-
+	/*! CANState accessor
+	 * @return the state the device is in
+	 */
 	CANStates getCANState() const;
 
 	const std::string& getName() const;
@@ -104,6 +109,7 @@ protected:
 	//! List of SDO messages
 	std::vector<SDOMsgPtr> sdos_;
 
+	//! the can state the device is in
 	CANStates canState_;
 
 	//! Heartbeat time interval [ms]. Set to 0 to disable heartbeat message reception checking.

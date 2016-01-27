@@ -69,9 +69,9 @@ bool Device::initHeartbeat(const unsigned int heartBeatTime) {
 
 bool Device::checkHeartbeat() {
 
-	if(txPDONMT_->isBootup()) {
-		initDevice();
+	if(canState_ == CANStates::initializing && txPDONMT_->isBootup()) {
 		canState_ = CANStates::preOperational;
+		initDevice();
 	}else if(txPDONMT_->isPreOperational()) {
 		canState_ = CANStates::preOperational;
 	}else if(txPDONMT_->isOperational()) {
