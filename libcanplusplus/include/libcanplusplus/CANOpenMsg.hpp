@@ -100,7 +100,7 @@ public:
 	 */
 	int getFlag();
 
-	/*! Gets RTR flag 
+	/*! Gets RTR flag
 	 * @return
 	 */
 	int getRTR();
@@ -121,7 +121,7 @@ public:
 	 */
 	void setFlag(int flag);
 
-	/*! Sets the RTR flag 
+	/*! Sets the RTR flag
 	 * @param rtr if true message is a RTR frame
 	 */
 	void setRTR(int rtr);
@@ -131,7 +131,7 @@ public:
 	 */
 	void setValue(int* value);
 
-	/*! Lengtsh of the values in the stack
+	/*! Length of the values in the stack
 	 * @param length array of length 8
 	 */
 	void setLength(int* length);
