@@ -38,10 +38,6 @@ public:
 	virtual ~SDOReadMsg();
 
 protected:
-	//! index of object
-	int index_;
-	//! sub index of object
-	int subindex_;
 
 	//! Hook function that is invoked when the input message is received
 	virtual void processReceivedMsg();

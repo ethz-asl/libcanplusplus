@@ -44,12 +44,6 @@ protected:
 	//! length/size of data (number of bytes)
 	char length_;
 
-	//! index of object
-	int index_;
-
-	//! sub index of object
-	int subindex_;
-
 	//! data that has to be written
 	int data_;
 
