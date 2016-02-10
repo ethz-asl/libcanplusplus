@@ -10,9 +10,11 @@
 #include "libcanplusplus/SDOMsg.hpp"
 #include <stdio.h>
 
-SDOMsg::SDOMsg(int inSDOSMID, int outSDOSMID, int nodeId)
+SDOMsg::SDOMsg(int inSDOSMID, int outSDOSMID, int nodeId, int index, int subIndex)
 :nodeId_(nodeId),
  timeout_(0),
+ index_(index),
+ subIndex_(subIndex),
  isSent_(false),
  isReceived_(false),
  isWaiting_(false),

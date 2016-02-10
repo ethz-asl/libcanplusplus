@@ -15,16 +15,14 @@ SDOReadMsg::SDOReadMsg(int inSMID,
 		int nodeId,
 		int index,
 		int subindex)
-		:SDOMsg(inSMID, outSMID, nodeId),
-		 index_(index),
-		 subindex_(subindex)
+		:SDOMsg(inSMID, outSMID, nodeId, index, subindex)
 {
 
 	int Length[8] = {1, 1, 1, 1, 1, 1, 1, 1};
 	int Value[8] = {0x40,
-					(index_ & 0x00ff),
-					(index_ & 0xff00)>>8,
-					subindex_,
+					(index & 0x00ff),
+					(index & 0xff00)>>8,
+					subindex,
 					0x00,
 					0x00,
 					0x00,

@@ -34,7 +34,7 @@ public:
 	 * @param outSMID   index of shared memory of output message
 	 * @param nodeId	ID of the CAN node
 	 */
-	SDOMsg(int inSMID, int outSMID, int nodeId);
+	SDOMsg(int inSMID, int outSMID, int nodeId, int index = 0, int subIndex = 0);
 
 	//! Destructor
 	virtual ~SDOMsg();
@@ -129,6 +129,10 @@ public:
       return value;
   }
 
+  //! getters for index and subindex for message verfication
+  int getIndex() {return index_;}
+  int getSubIndex() {return subIndex_;}
+
 
 protected:
 	//! Hook function that is invoked when a message is received
@@ -139,6 +143,12 @@ protected:
 
 	//! timeout counter
 	int timeout_;
+
+	//! Index
+	int index_;
+
+	//! SubIndex
+	int subIndex_;
 
 	//! if true, SDO manager has sent SDO through CAN network
 	bool isSent_;

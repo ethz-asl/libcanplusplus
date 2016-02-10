@@ -17,17 +17,15 @@ SDOWriteMsg::SDOWriteMsg(int inSMID,
 		int index,
 		int subindex,
 		int data)
-:SDOMsg(inSMID, outSMID, nodeId),
+:SDOMsg(inSMID, outSMID, nodeId, index, subindex),
  length_(length),
- index_(index),
- subindex_(subindex),
  data_(data)
 {
 	int Length[8] = {1, 1, 1, 1, 1, 1, 1, 1};
 	int Value[8] = {length_,
-					(index_ & 0x00ff),
-					(index_ & 0xff00)>>8,
-					subindex_,
+					(index & 0x00ff),
+					(index & 0xff00)>>8,
+					subindex,
 					(data_ & 0x000000ff),
 					(data_ & 0x0000ff00)>>8,
 					(data_ & 0x00ff0000)>>16,
