@@ -4,6 +4,8 @@ find_package(catkin REQUIRED COMPONENTS
     libcanplusplus    
 )
 
+add_definitions(-std=c++11)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES elmo_devices
