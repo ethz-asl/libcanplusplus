@@ -133,6 +133,10 @@ public:
   int getIndex() {return index_;}
   int getSubIndex() {return subIndex_;}
 
+  void setMaxTimeout(int maxTimeout) {
+    maxTimeout_ = maxTimeout;
+  }
+
 
 protected:
 	//! Hook function that is invoked when a message is received
@@ -143,6 +147,8 @@ protected:
 
 	//! timeout counter
 	int timeout_;
+
+	int maxTimeout_;
 
 	//! Index
 	int index_;

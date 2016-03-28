@@ -13,6 +13,7 @@
 SDOMsg::SDOMsg(int inSDOSMID, int outSDOSMID, int nodeId, int index, int subIndex)
 :nodeId_(nodeId),
  timeout_(0),
+ maxTimeout_(10),
  index_(index),
  subIndex_(subIndex),
  isSent_(false),
@@ -45,9 +46,8 @@ CANOpenMsg* SDOMsg::getInputMsg()
 
 bool SDOMsg::hasTimeOut()
 {
-	const int maxTimeOut = 10;
 
-	if (timeout_ >= maxTimeOut) {
+	if (timeout_ >= maxTimeout_) {
 		return true;
 	}
 	return false;
@@ -107,8 +107,7 @@ void SDOMsg::receiveMsg(CANMsg *canDataMeas)
 		timeout_++;
 	}
 
-	const int maxTimeOut = 10;
-	if (timeout_ >= maxTimeOut) {
+	if (timeout_ >= maxTimeout_) {
 		isWaiting_ = false;
 	}
 }
