@@ -8,5 +8,5 @@
   <url type="website">https://github.com/ethz-asl/libcanplusplus</url>
   <author email="gehrinch@ethz.ch">Christian Gehring</author>
   <buildtool_depend>catkin</buildtool_depend>
-  <build_export_depend>Boost</build_export_depend>
+  <build_export_depend>boost</build_export_depend>
 </package>
