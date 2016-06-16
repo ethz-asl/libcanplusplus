@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.6)
 project(libcanplusplus)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED 
+  roscpp
+)
 find_package(Boost REQUIRED)
 
 ###################################
