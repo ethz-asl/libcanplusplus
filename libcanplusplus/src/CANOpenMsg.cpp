@@ -10,7 +10,6 @@
 
 #include <assert.h>
 #include "libcanplusplus/CANOpenMsg.hpp"
-#include <ros/ros.h>
 
 CANOpenMsg::CANOpenMsg(int COBId, int SMId)
 :COBId_(COBId),
