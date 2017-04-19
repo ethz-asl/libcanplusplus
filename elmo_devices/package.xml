@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>elmo_devices</name>
+  <version>0.0.0</version>
+  <description>The elmo_devices package</description>
+  <maintainer email="gehrinch@ethz.ch">Christian Gehring</maintainer>
+  <license>BSD</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>libcanplusplus</depend>
+</package>
